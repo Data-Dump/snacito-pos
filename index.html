@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SNACITO POS — Orders</title>
-  <link rel="stylesheet" href="pos-style.css">
+  <link rel="stylesheet" href="pos-style.css?v=2">
   <style>
     .orders-page { padding: 20px; max-width: 1600px; margin: 0 auto; }
 
@@ -681,18 +681,9 @@
     </div>
   </div>
 
-  <!-- WhatsApp Popup -->
-  <div class="wa-popup-overlay" id="wa-popup">
-    <div class="wa-popup">
-      <div class="wa-popup-icon">📱</div>
-      <div class="wa-popup-title" id="wa-popup-title">Order Ready!</div>
-      <div class="wa-popup-sub" id="wa-popup-sub">Send a WhatsApp message to the customer.</div>
-      <a class="wa-popup-btn" id="wa-popup-link" href="#" target="_blank">💬 Send WhatsApp Message</a>
-      <button class="wa-popup-skip" onclick="closeWaPopup()">Skip / No Phone Number</button>
-    </div>
-  </div>
+  <!-- WhatsApp Toasts are rendered dynamically by pos-app.js -->
 
-  <script src="pos-app.js"></script>
+  <script src="pos-app.js?v=2"></script>
   <script>
     // ═══════════════════════════════════════════
     //  STATE: All orders stored as cards
@@ -1411,8 +1402,6 @@
     //  WHATSAPP POPUP (for order ready notification)
     // ═══════════════════════════════════════════
 
-    let waPopupQueue = []; // queue multiple ready notifications
-
     function showWaPopup(card, order) {
       const name = card.customerName || order.customer_name || 'Customer';
       let phone = '';
@@ -1421,11 +1410,11 @@
       const note = card.note || order.note || '';
       const phoneMatch = note.match(/Phone:\s*(?:\+?91)?\s*(\d{10})/);
       if (phoneMatch) phone = phoneMatch[1];
-
-      document.getElementById('wa-popup-title').textContent = `${card.token} — ${name} is READY!`;
+      
+      const title = `${card.token} — ${name} is READY!`;
 
       if (phone) {
-        document.getElementById('wa-popup-sub').textContent = `Customer phone: +91 ${phone}. Send them a message that their order is ready for pickup!`;
+        const sub = `Customer phone: +91 ${phone}.`;
         const lines = [
           'Hi ' + name + '! Your *SNACITO* order (' + card.token + ') is *ready*!',
           '',
@@ -1435,24 +1424,21 @@
         ];
         const msg = lines.join('\n');
         const waLink = 'https://wa.me/91' + phone + '?text=' + encodeURIComponent(msg);
-        document.getElementById('wa-popup-link').href = waLink;
-        document.getElementById('wa-popup-link').style.display = '';
+        showWaToast(title, sub, waLink);
       } else {
-        document.getElementById('wa-popup-sub').textContent = `No phone number found for this order.`;
-        document.getElementById('wa-popup-link').style.display = 'none';
+        const sub = `No phone number found. You will have to select the contact manually.`;
+        const lines = [
+          'Hi ' + name + '! Your *SNACITO* order (' + card.token + ') is *ready*!',
+          '',
+          'Please collect from the *SNACITO Stall* at Main Sports Ground, JKLU.',
+          '',
+          'Thank you!'
+        ];
+        const msg = lines.join('\n');
+        const waLink = 'https://wa.me/?text=' + encodeURIComponent(msg);
+        showWaToast(title, sub, waLink);
       }
-
-      document.getElementById('wa-popup').classList.add('show');
-      playNotificationSound();
     }
-
-    function closeWaPopup() {
-      document.getElementById('wa-popup').classList.remove('show');
-    }
-
-    document.getElementById('wa-popup').addEventListener('click', e => {
-      if (e.target === e.currentTarget) closeWaPopup();
-    });
   </script>
 
 </body>

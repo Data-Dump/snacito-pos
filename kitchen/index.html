@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SNACITO POS — Kitchen Display</title>
-  <link rel="stylesheet" href="../pos-style.css">
+  <link rel="stylesheet" href="../pos-style.css?v=2">
   <style>
     body { background: #060200; }
 
@@ -136,56 +136,6 @@
     }
 
     .order-timer.overdue { color: var(--danger); }
-    /* WhatsApp popup */
-    .wa-popup-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.7);
-      backdrop-filter: blur(6px);
-      z-index: 500;
-      display: none;
-      align-items: center;
-      justify-content: center;
-    }
-    .wa-popup-overlay.show { display: flex; }
-    .wa-popup {
-      background: var(--bg-card);
-      border: 2px solid #25D366;
-      border-radius: var(--radius-lg);
-      padding: 28px 32px;
-      max-width: 420px;
-      width: 90vw;
-      text-align: center;
-      animation: popIn 0.3s ease;
-    }
-    .wa-popup-icon { font-size: 3rem; margin-bottom: 12px; }
-    .wa-popup-title { font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin-bottom: 6px; }
-    .wa-popup-sub { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.5; }
-    .wa-popup-btn {
-      display: inline-block;
-      padding: 14px 32px;
-      background: #25D366;
-      color: #fff;
-      font-weight: 700;
-      font-size: 0.95rem;
-      border-radius: 12px;
-      text-decoration: none;
-      cursor: pointer;
-      border: none;
-      font-family: inherit;
-      transition: 0.2s;
-    }
-    .wa-popup-btn:hover { background: #1ebe5d; transform: scale(1.03); }
-    .wa-popup-skip {
-      display: block;
-      margin-top: 12px;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      cursor: pointer;
-      background: none;
-      border: none;
-      font-family: inherit;
-    }
   </style>
 </head>
 <body>
@@ -234,18 +184,9 @@
     </div>
   </div>
 
-  <!-- WhatsApp Popup -->
-  <div class="wa-popup-overlay" id="wa-popup">
-    <div class="wa-popup">
-      <div class="wa-popup-icon">📱</div>
-      <div class="wa-popup-title" id="wa-popup-title">Order Ready!</div>
-      <div class="wa-popup-sub" id="wa-popup-sub">Send a WhatsApp message to let the customer know their order is ready.</div>
-      <a class="wa-popup-btn" id="wa-popup-link" href="#" target="_blank">💬 Send WhatsApp Message</a>
-      <button class="wa-popup-skip" onclick="closeWhatsAppPopup()">Skip / No Phone Number</button>
-    </div>
-  </div>
+  <!-- WhatsApp Toasts are rendered dynamically by pos-app.js -->
 
-  <script src="../pos-app.js"></script>
+  <script src="../pos-app.js?v=2"></script>
   <script>
     const orders = new Map();
     let currentFilter = 'active';
@@ -362,10 +303,7 @@
           lastDataHash = buildDataHash();
           renderKitchen();
 
-          // If marked as ready, show WhatsApp popup
-          if (newStatus === 'ready') {
-            showWhatsAppPopup(order);
-          }
+          // (WhatsApp notification is now handled exclusively by the main POS screen)
         }
         showToast(`Order ${orders.get(id)?.token || ''} → ${newStatus}`, '🔄');
       } catch (err) {
@@ -374,49 +312,7 @@
       }
     }
 
-    function showWhatsAppPopup(order) {
-      const name = order.customer_name || 'Customer';
-      // Try to extract phone from note (online orders have 'Phone: XXXXXXXXXX')
-      let phone = '';
-      if (order.note) {
-        const phoneMatch = order.note.match(/Phone:\s*(\+?91)?\s*(\d{10})/);
-        if (phoneMatch) phone = phoneMatch[2];
-      }
 
-      const title = `${order.token} — ${name}`;
-      const sub = phone
-        ? `Customer phone: +91 ${phone}. Send them a message that their order is ready!`
-        : `No phone number found for this order. You can skip this step.`;
-
-      document.getElementById('wa-popup-title').textContent = title;
-      document.getElementById('wa-popup-sub').textContent = sub;
-
-      if (phone) {
-        const lines = [
-          'Hi ' + name + '! Your *SNACITO* order (' + order.token + ') is *ready*!',
-          '',
-          'Please collect from the *SNACITO Stall* at Main Sports Ground, JKLU.',
-          '',
-          'Thank you!'
-        ];
-        const msg = lines.join('\n');
-        const waLink = 'https://wa.me/91' + phone + '?text=' + encodeURIComponent(msg);
-        document.getElementById('wa-popup-link').href = waLink;
-        document.getElementById('wa-popup-link').style.display = '';
-      } else {
-        document.getElementById('wa-popup-link').style.display = 'none';
-      }
-
-      document.getElementById('wa-popup').classList.add('show');
-    }
-
-    function closeWhatsAppPopup() {
-      document.getElementById('wa-popup').classList.remove('show');
-    }
-
-    document.getElementById('wa-popup').addEventListener('click', e => {
-      if (e.target === e.currentTarget) closeWhatsAppPopup();
-    });
 
     document.querySelectorAll('.kitchen-filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {

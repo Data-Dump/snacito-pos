@@ -339,6 +339,43 @@ function showToast(message, icon = '✅') {
   }, 3000);
 }
 
+// ─── WhatsApp Toast Notifications ───
+function showWaToast(title, sub, waLink) {
+  let container = document.getElementById('wa-toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'wa-toast-container';
+    container.className = 'wa-toast-container';
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'wa-toast';
+  
+  let linkHtml = '';
+  if (waLink) {
+    linkHtml = `<a class="wa-toast-btn" href="${waLink}" target="_blank">💬 Send Message</a>`;
+  }
+
+  toast.innerHTML = `
+    <button class="wa-toast-close">&times;</button>
+    <div class="wa-toast-header">
+      <div class="wa-toast-icon">📱</div>
+      <div class="wa-toast-title">${title}</div>
+    </div>
+    <div class="wa-toast-sub">${sub}</div>
+    ${linkHtml}
+  `;
+
+  toast.querySelector('.wa-toast-close').addEventListener('click', () => {
+    toast.style.animation = 'slideOutRight 0.3s forwards';
+    setTimeout(() => toast.remove(), 300);
+  });
+
+  container.appendChild(toast);
+  playNotificationSound();
+}
+
 // ─── Time Ago ───
 function timeAgo(dateStr) {
   const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
