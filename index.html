@@ -633,13 +633,13 @@
       </div>
       <div class="edit-panel-footer" id="edit-footer">
         <div class="edit-customer-row">
-          <input type="text" class="pos-input" id="edit-customer" placeholder="Customer Name (optional)">
+          <input type="text" class="pos-input" id="edit-customer" placeholder="Customer Name (required)">
           <input type="text" class="pos-input" id="edit-note" placeholder="Note...">
         </div>
         <div class="edit-customer-row" style="margin-bottom:10px;">
           <div style="display:flex; align-items:center; gap:0; flex:1; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-sm); overflow:hidden;">
             <span style="padding:0 10px; font-size:0.8rem; font-weight:600; color:var(--text-muted); white-space:nowrap;">+91</span>
-            <input type="tel" class="pos-input" id="edit-phone" placeholder="Phone Number" maxlength="10" pattern="[0-9]{10}" style="border:none; border-left:1px solid var(--border-color); border-radius:0;">
+            <input type="tel" class="pos-input" id="edit-phone" placeholder="Phone Number or 0 if none" maxlength="10" style="border:none; border-left:1px solid var(--border-color); border-radius:0;">
           </div>
         </div>
         <div class="edit-total-row">
@@ -882,7 +882,7 @@
       // Load phone — from card.phone or extract from note
       let phone = card.phone || '';
       if (!phone && card.note) {
-        const phoneMatch = card.note.match(/Phone:\s*(?:\+?91)?\s*(\d{10})/);
+        const phoneMatch = card.note.match(/Phone:\s*(?:\+?91)?\s*(\d{1,10})/);
         if (phoneMatch) phone = phoneMatch[1];
       }
       document.getElementById('edit-phone').value = phone;
@@ -893,6 +893,22 @@
       overlay.classList.add('show');
     }
 
+    function validateDraftEnable() {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (!card) return;
+      const sendBtn = document.getElementById('btn-send-order');
+      if (card.status === 'draft') {
+        const name = document.getElementById('edit-customer').value.trim();
+        const phone = document.getElementById('edit-phone').value.trim();
+        const validPhone = phone === '0' || /^\d{10}$/.test(phone);
+        const validName = name.length > 0;
+        sendBtn.disabled = card.cart.length === 0 || !validName || !validPhone;
+        sendBtn.style.display = '';
+      } else {
+        sendBtn.style.display = 'none';
+      }
+    }
+
     function updateWaButton() {
       const card = allCards.find(c => c.id === editingCardId);
       if (!card) return;
@@ -900,7 +916,7 @@
       const waBtn = document.getElementById('btn-send-wa');
       const phone = document.getElementById('edit-phone').value.trim();
 
-      if (phone && /^\d{10}$/.test(phone)) {
+      if (phone !== '0' && /^\d{10}$/.test(phone)) {
         const name = card.customerName || document.getElementById('edit-customer').value.trim() || 'Customer';
         const total = calcCardTotal(card);
 
@@ -933,7 +949,10 @@
     }
 
     // Update WA button live as phone is typed
-    document.getElementById('edit-phone').addEventListener('input', updateWaButton);
+    document.getElementById('edit-phone').addEventListener('input', () => {
+      updateWaButton();
+      validateDraftEnable();
+    });
 
     function closeEditPanel() {
       const card = allCards.find(c => c.id === editingCardId);
@@ -1035,13 +1054,7 @@
       const total = calcCardTotal(card);
       document.getElementById('edit-total').textContent = `₹${total}`;
 
-      const sendBtn = document.getElementById('btn-send-order');
-      if (card.status === 'draft') {
-        sendBtn.disabled = card.cart.length === 0;
-        sendBtn.style.display = '';
-      } else {
-        sendBtn.style.display = 'none';
-      }
+      validateDraftEnable();
     }
 
     // ═══════════════════════════════════════════
@@ -1215,6 +1228,7 @@
       if (card && card.status === 'draft') {
         card.customerName = document.getElementById('edit-customer').value.trim();
       }
+      validateDraftEnable();
     });
 
     // ═══════════════════════════════════════════
@@ -1406,14 +1420,14 @@
       const name = card.customerName || order.customer_name || 'Customer';
       let phone = '';
 
-      // Extract phone from note (online orders: 'Phone: XXXXXXXXXX')
+      // Extract phone from note (online orders: 'Phone: XXXXXXXXXX' or 'Phone: 0')
       const note = card.note || order.note || '';
-      const phoneMatch = note.match(/Phone:\s*(?:\+?91)?\s*(\d{10})/);
+      const phoneMatch = note.match(/Phone:\s*(?:\+?91)?\s*(\d{1,10})/);
       if (phoneMatch) phone = phoneMatch[1];
       
       const title = `${card.token} — ${name} is READY!`;
 
-      if (phone) {
+      if (phone && phone !== '0') {
         const sub = `Customer phone: +91 ${phone}.`;
         const lines = [
           'Hi ' + name + '! Your *SNACITO* order (' + card.token + ') is *ready*!',
@@ -1426,7 +1440,8 @@
         const waLink = 'https://wa.me/91' + phone + '?text=' + encodeURIComponent(msg);
         showWaToast(title, sub, waLink);
       } else {
-        const sub = `No phone number found. You will have to select the contact manually.`;
+        const isOptOut = phone === '0';
+        const sub = isOptOut ? `Customer opted out of WhatsApp messages.` : `No phone number found. You will have to select the contact manually.`;
         const lines = [
           'Hi ' + name + '! Your *SNACITO* order (' + card.token + ') is *ready*!',
           '',
@@ -1435,7 +1450,7 @@
           'Thank you!'
         ];
         const msg = lines.join('\n');
-        const waLink = 'https://wa.me/?text=' + encodeURIComponent(msg);
+        const waLink = isOptOut ? '' : 'https://wa.me/?text=' + encodeURIComponent(msg);
         showWaToast(title, sub, waLink);
       }
     }
