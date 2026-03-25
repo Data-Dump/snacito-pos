@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SNACITO POS — Dashboard</title>
+  <link rel="stylesheet" href="../pos-style.css">
+  <style>
+    .dashboard-content { padding: 20px; max-width: 1400px; margin: 0 auto; }
+
+    .section-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--brand-gold);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .filter-btn {
+      padding: 6px 14px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      font-family: inherit;
+      color: var(--text-muted);
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: 100px;
+      cursor: pointer;
+      transition: var(--transition);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .filter-btn:hover { color: var(--text-secondary); }
+    .filter-btn.active {
+      background: var(--brand-gold);
+      color: var(--bg-primary);
+      border-color: var(--brand-gold);
+    }
+
+    .table-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .table-scroll { overflow-x: auto; }
+
+    .orders-table td.actions-cell { min-width: 160px; }
+
+    .total-banner {
+      background: linear-gradient(135deg, var(--bg-card), rgba(212, 160, 23, 0.05));
+      border: 1.5px solid var(--brand-gold);
+      border-radius: var(--radius-lg);
+      padding: 20px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .total-banner-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .total-banner-value {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: var(--brand-gold);
+    }
+
+    .no-orders-row td {
+      text-align: center;
+      padding: 40px 20px !important;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="pos-topbar">
+    <div class="pos-topbar-brand">
+      <h1>SNACITO</h1>
+      <div>
+        <div class="screen-label">Dashboard</div>
+      </div>
+    </div>
+    <div class="pos-topbar-actions">
+      <span class="pos-topbar-clock" id="clock"></span>
+      <nav class="pos-nav-links">
+        <a href="../" class="pos-nav-link">Order</a>
+        <a href="../kitchen/" class="pos-nav-link">Kitchen</a>
+        <a href="./" class="pos-nav-link active">Dashboard</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="dashboard-content">
+
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-total-orders">0</div>
+        <div class="stat-label">Total Orders</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-new" style="color:var(--brand-gold)">0</div>
+        <div class="stat-label">New</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-preparing" style="color:var(--warning)">0</div>
+        <div class="stat-label">Preparing</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-ready" style="color:var(--success)">0</div>
+        <div class="stat-label">Ready</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-completed" style="color:var(--text-muted)">0</div>
+        <div class="stat-label">Completed</div>
+      </div>
+    </div>
+
+    <div class="total-banner">
+      <div><div class="total-banner-label">Total Revenue (Today)</div></div>
+      <div class="total-banner-value" id="total-revenue">₹0</div>
+    </div>
+
+    <div class="filter-bar">
+      <span style="font-size:0.72rem; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:1px;">Filter:</span>
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="new">New</button>
+      <button class="filter-btn" data-filter="preparing">Preparing</button>
+      <button class="filter-btn" data-filter="ready">Ready</button>
+      <button class="filter-btn" data-filter="completed">Completed</button>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th>Token</th>
+              <th>Customer</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Time</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="orders-tbody">
+            <tr class="no-orders-row"><td colspan="7">Loading orders...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="../pos-app.js"></script>
+  <script>
+    let allOrders = [];
+    let dashFilter = 'all';
+
+    async function loadOrders() {
+      try {
+        allOrders = await supabaseSelect('pos_orders', 'select=*');
+        renderTable();
+        updateDashStats();
+      } catch (err) {
+        console.error('Failed to load orders:', err);
+        document.getElementById('orders-tbody').innerHTML = '<tr class="no-orders-row"><td colspan="7">Failed to load. Check connection.</td></tr>';
+      }
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('orders-tbody');
+      const filtered = allOrders.filter(o => dashFilter === 'all' || o.status === dashFilter);
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr class="no-orders-row"><td colspan="7">No ${dashFilter === 'all' ? '' : dashFilter + ' '}orders found</td></tr>`;
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(order => {
+        const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+        const created = new Date(order.created_at);
+
+        html += `<tr>`;
+        html += `<td class="token-cell">${order.token}</td>`;
+        html += `<td>${order.customer_name || 'Walk-in'}${order.note ? `<br><span style="font-size:0.7rem;color:var(--text-muted);">📝 ${order.note}</span>` : ''}</td>`;
+
+        html += `<td class="items-cell">`;
+        if (Array.isArray(items)) {
+          items.forEach(item => {
+            let line = `${item.name} ×${item.qty}`;
+            if (item.flavour) line += ` (${item.flavour})`;
+            if (item.addons && item.addons.length > 0) line += ` + ${item.addons.map(a => a.name).join(', ')}`;
+            html += `<div class="item-line">${line}</div>`;
+          });
+        }
+        html += `</td>`;
+
+        html += `<td style="font-weight:700;color:var(--brand-gold);">₹${order.total}</td>`;
+        html += `<td><span class="status-badge ${order.status}">${order.status}</span></td>`;
+        html += `<td style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap;">${created.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}<br>${timeAgo(order.created_at)}</td>`;
+
+        html += `<td class="actions-cell"><div class="status-actions">`;
+        if (order.status === 'new') {
+          html += `<button class="status-action-btn to-preparing" onclick="changeStatus(${order.id}, 'preparing')">Start</button>`;
+          html += `<button class="status-action-btn to-ready" onclick="changeStatus(${order.id}, 'ready')">Ready</button>`;
+        } else if (order.status === 'preparing') {
+          html += `<button class="status-action-btn to-ready" onclick="changeStatus(${order.id}, 'ready')">Ready</button>`;
+        } else if (order.status === 'ready') {
+          html += `<button class="status-action-btn to-completed" onclick="changeStatus(${order.id}, 'completed')">Complete</button>`;
+        } else {
+          html += `<span style="font-size:0.7rem; color:var(--text-muted);">—</span>`;
+        }
+        html += `</div></td></tr>`;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function updateDashStats() {
+      document.getElementById('stat-total-orders').textContent = allOrders.length;
+      document.getElementById('stat-new').textContent = allOrders.filter(o => o.status === 'new').length;
+      document.getElementById('stat-preparing').textContent = allOrders.filter(o => o.status === 'preparing').length;
+      document.getElementById('stat-ready').textContent = allOrders.filter(o => o.status === 'ready').length;
+      document.getElementById('stat-completed').textContent = allOrders.filter(o => o.status === 'completed').length;
+
+      const revenue = allOrders.reduce((s, o) => s + (o.total || 0), 0);
+      document.getElementById('total-revenue').textContent = `₹${revenue.toLocaleString('en-IN')}`;
+    }
+
+    async function changeStatus(id, newStatus) {
+      try {
+        await supabaseUpdate('pos_orders', id, { status: newStatus });
+        const order = allOrders.find(o => o.id === id);
+        if (order) order.status = newStatus;
+        renderTable();
+        updateDashStats();
+        showToast(`Order updated to ${newStatus}`, '✅');
+      } catch (err) {
+        console.error('Status update failed:', err);
+        showToast('Failed to update', '❌');
+      }
+    }
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        dashFilter = btn.dataset.filter;
+        renderTable();
+      });
+    });
+
+    async function pollDashboard() {
+      try {
+        const newData = await supabaseSelect('pos_orders', 'select=*');
+        const hadNew = newData.length > allOrders.length;
+        allOrders = newData;
+        renderTable();
+        updateDashStats();
+        if (hadNew) playNotificationSound();
+      } catch (err) { /* retry */ }
+    }
+
+    loadOrders();
+    setInterval(pollDashboard, 3000);
+    startClock('clock');
+  </script>
+
+</body>
+</html>

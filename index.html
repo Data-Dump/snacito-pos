@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SNACITO POS — Orders</title>
+  <link rel="stylesheet" href="pos-style.css">
+  <style>
+    .orders-page { padding: 20px; max-width: 1600px; margin: 0 auto; }
+
+    /* ─── Order Cards Grid ─── */
+    .orders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    /* New Order Card (the + button) */
+    .new-order-card {
+      border: 2px dashed var(--brand-gold);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 220px;
+      cursor: pointer;
+      transition: var(--transition);
+      background: rgba(212, 160, 23, 0.03);
+    }
+
+    .new-order-card:hover {
+      background: rgba(212, 160, 23, 0.1);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(212, 160, 23, 0.15);
+    }
+
+    .new-order-card .plus-icon {
+      font-size: 3rem;
+      color: var(--brand-gold);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .new-order-card .plus-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--brand-gold);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    /* Order Card */
+    .order-card {
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      cursor: pointer;
+      transition: var(--transition);
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .order-card:hover {
+      border-color: var(--brand-gold);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(212, 160, 23, 0.1);
+    }
+
+    .order-card.draft { border-color: var(--brand-gold); }
+    .order-card.sent { border-color: var(--success); opacity: 0.85; }
+    .order-card.sent:hover { opacity: 1; }
+
+    .order-card-header {
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .order-card-token {
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: var(--brand-gold);
+      letter-spacing: 1px;
+    }
+
+    .order-card-customer {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .order-card-body {
+      padding: 12px 16px;
+      flex: 1;
+    }
+
+    .order-card-item-line {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      padding: 3px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .order-card-item-line .oname { flex: 1; }
+    .order-card-item-line .oqty {
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-left: 8px;
+    }
+
+    .order-card-empty {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      text-align: center;
+      padding: 20px 0;
+      opacity: 0.5;
+    }
+
+    .order-card-footer {
+      padding: 10px 16px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .order-card-total {
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: var(--brand-gold);
+    }
+
+    .order-card-time {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    /* Draft badge */
+    .card-badge-draft {
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 100px;
+      background: var(--brand-gold-dim);
+      color: var(--brand-gold);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .card-badge-sent {
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 100px;
+      background: var(--success-dim);
+      color: var(--success);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ─── Editing Panel (slide-in right side) ─── */
+    .edit-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(6px);
+      z-index: 200;
+      display: none;
+    }
+
+    .edit-overlay.show { display: flex; justify-content: flex-end; }
+
+    .edit-panel {
+      width: 520px;
+      max-width: 100%;
+      height: 100vh;
+      background: var(--bg-primary);
+      border-left: 2px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      animation: slideInPanel 0.3s ease;
+      overflow: hidden;
+    }
+
+    @keyframes slideInPanel {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+
+    .edit-panel-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+
+    .edit-panel-header h2 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--brand-gold);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .edit-panel-close {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .edit-panel-close:hover {
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+
+    .edit-panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+    }
+
+    .edit-section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      margin-top: 16px;
+    }
+
+    .edit-section-title:first-child { margin-top: 0; }
+
+    /* Menu items inside edit panel */
+    .edit-menu-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .edit-menu-btn {
+      padding: 10px 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: left;
+    }
+
+    .edit-menu-btn:hover {
+      border-color: var(--brand-gold);
+      background: var(--bg-card-hover);
+    }
+
+    .edit-menu-btn.has-qty {
+      border-color: var(--brand-gold);
+      background: var(--brand-gold-dim);
+    }
+
+    .edit-menu-btn .em-name {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .edit-menu-btn .em-price {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--brand-gold);
+      margin-top: 2px;
+    }
+
+    .edit-menu-btn .em-qty {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--brand-gold);
+      background: var(--brand-gold);
+      color: var(--bg-primary);
+      padding: 1px 6px;
+      border-radius: 4px;
+      float: right;
+      margin-top: -20px;
+    }
+
+    /* Cart items in edit panel */
+    .edit-cart-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .edit-cart-item:last-child { border-bottom: none; }
+
+    .edit-cart-item .eci-info { flex: 1; }
+    .edit-cart-item .eci-name { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); }
+    .edit-cart-item .eci-detail { font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
+    .edit-cart-item .eci-price { font-size: 0.82rem; font-weight: 700; color: var(--brand-gold); white-space: nowrap; }
+
+    .edit-panel-footer {
+      padding: 16px 20px;
+      background: var(--bg-card);
+      border-top: 2px solid var(--border-color);
+      flex-shrink: 0;
+    }
+
+    .edit-customer-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .edit-total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .edit-total-label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
+    .edit-total-value { font-size: 1.5rem; font-weight: 900; color: var(--brand-gold); }
+
+    /* Sent order view-only */
+    .edit-panel.is-sent .edit-menu-grid { display: none; }
+    .edit-panel.is-sent .edit-section-title.add-section { display: none; }
+    .edit-panel.is-sent .edit-panel-footer .btn-primary { display: none; }
+    .edit-panel.is-sent .qty-controls .qty-btn { display: none; }
+
+    /* ─── Online Orders Card ─── */
+    .online-orders-card {
+      border: 2px dashed var(--success);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 220px;
+      cursor: pointer;
+      transition: var(--transition);
+      background: rgba(46, 204, 113, 0.03);
+      position: relative;
+    }
+
+    .online-orders-card:hover {
+      background: rgba(46, 204, 113, 0.1);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(46, 204, 113, 0.15);
+    }
+
+    .online-orders-card .ol-icon {
+      font-size: 2.5rem;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .online-orders-card .ol-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--success);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .online-orders-card .ol-count {
+      margin-top: 8px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: var(--success);
+      color: var(--bg-primary);
+      padding: 3px 10px;
+      border-radius: 100px;
+    }
+
+    .online-orders-card .ol-count.zero { background: var(--text-muted); }
+
+    /* ─── Online Orders Modal ─── */
+    .online-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      z-index: 250;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .online-modal-overlay.show { display: flex; }
+
+    .online-modal {
+      background: var(--bg-primary);
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      width: 620px;
+      max-width: 95vw;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      animation: popIn 0.3s ease;
+    }
+
+    .online-modal-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+
+    .online-modal-header h2 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--success);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .online-modal-body {
+      padding: 16px 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .online-order-row {
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .online-order-row:hover {
+      border-color: var(--success);
+      background: var(--bg-card-hover);
+    }
+
+    .online-order-row.already-imported {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    .oo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .oo-id {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--brand-gold);
+      letter-spacing: 0.5px;
+    }
+
+    .oo-name {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .oo-amount {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--brand-gold);
+    }
+
+    .oo-items {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      white-space: pre-line;
+      line-height: 1.5;
+      max-height: 80px;
+      overflow: hidden;
+    }
+
+    .oo-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+
+    .oo-time {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .oo-import-badge {
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 100px;
+      background: var(--success);
+      color: var(--bg-primary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .oo-imported-badge {
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 100px;
+      background: var(--text-muted);
+      color: var(--bg-primary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .online-empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+
+    .online-empty-icon { font-size: 3rem; opacity: 0.3; margin-bottom: 8px; }
+    .online-empty-text { font-size: 0.9rem; font-weight: 600; }
+
+    /* WhatsApp popup */
+    .wa-popup-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      z-index: 350;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .wa-popup-overlay.show { display: flex; }
+    .wa-popup {
+      background: var(--bg-card);
+      border: 2px solid #25D366;
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      max-width: 420px;
+      width: 90vw;
+      text-align: center;
+      animation: popIn 0.3s ease;
+    }
+    .wa-popup-icon { font-size: 3rem; margin-bottom: 12px; }
+    .wa-popup-title { font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin-bottom: 6px; }
+    .wa-popup-sub { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.5; }
+    .wa-popup-btn {
+      display: inline-block;
+      padding: 14px 32px;
+      background: #25D366;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border-radius: 12px;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: 0.2s;
+    }
+    .wa-popup-btn:hover { background: #1ebe5d; transform: scale(1.03); }
+    .wa-popup-skip {
+      display: block;
+      margin-top: 12px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="pos-topbar">
+    <div class="pos-topbar-brand">
+      <h1>SNACITO</h1>
+      <div><div class="screen-label">Point of Sale</div></div>
+    </div>
+    <div class="pos-topbar-actions">
+      <span class="pos-topbar-clock" id="clock"></span>
+      <nav class="pos-nav-links">
+        <a href="./" class="pos-nav-link active">Order</a>
+        <a href="./kitchen/" class="pos-nav-link">Kitchen</a>
+        <a href="./dashboard/" class="pos-nav-link">Dashboard</a>
+        <a href="#" onclick="logoutPos(); return false;" class="pos-nav-link" style="color:#e74c3c; margin-left:12px;">Logout <span style="font-size:0.8rem">🚪</span></a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="orders-page">
+    <div class="orders-grid" id="orders-grid">
+      <!-- Cards rendered by JS -->
+    </div>
+  </div>
+
+  <!-- Edit Panel Overlay -->
+  <div class="edit-overlay" id="edit-overlay">
+    <div class="edit-panel" id="edit-panel">
+      <div class="edit-panel-header">
+        <h2 id="edit-title">New Order</h2>
+        <button class="edit-panel-close" onclick="closeEditPanel()">✕</button>
+      </div>
+      <div class="edit-panel-body" id="edit-body">
+        <!-- Menu + Cart rendered by JS -->
+      </div>
+      <div class="edit-panel-footer" id="edit-footer">
+        <div class="edit-customer-row">
+          <input type="text" class="pos-input" id="edit-customer" placeholder="Customer Name (optional)">
+          <input type="text" class="pos-input" id="edit-note" placeholder="Note...">
+        </div>
+        <div class="edit-customer-row" style="margin-bottom:10px;">
+          <div style="display:flex; align-items:center; gap:0; flex:1; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-sm); overflow:hidden;">
+            <span style="padding:0 10px; font-size:0.8rem; font-weight:600; color:var(--text-muted); white-space:nowrap;">+91</span>
+            <input type="tel" class="pos-input" id="edit-phone" placeholder="Phone Number" maxlength="10" pattern="[0-9]{10}" style="border:none; border-left:1px solid var(--border-color); border-radius:0;">
+          </div>
+        </div>
+        <div class="edit-total-row">
+          <span class="edit-total-label">Total</span>
+          <span class="edit-total-value" id="edit-total">₹0</span>
+        </div>
+        <a class="btn-primary" id="btn-send-wa" href="#" target="_blank" style="display:none; background:#25D366; text-align:center; text-decoration:none; color:#fff; font-size:0.82rem; padding:10px 16px; border-radius:10px;">📱 Send WhatsApp Confirmation</a>
+        <div style="border-top:1px solid var(--border-color); margin:6px 0;"></div>
+        <button class="btn-primary" id="btn-send-order" disabled>🔔 Send to Kitchen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Addon/Flavour Modal -->
+  <div class="pos-modal-overlay" id="addon-modal" style="z-index:300;">
+    <div class="pos-modal">
+      <h2 id="modal-title">Customize</h2>
+      <div id="modal-body"></div>
+      <div style="display:flex; gap:8px; margin-top:20px;">
+        <button class="btn-secondary" onclick="closeAddonModal()" style="flex:1;">Cancel</button>
+        <button class="btn-primary" id="modal-confirm" style="flex:1;">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Online Orders Modal -->
+  <div class="online-modal-overlay" id="online-modal">
+    <div class="online-modal">
+      <div class="online-modal-header">
+        <h2>📱 Online Orders</h2>
+        <button class="edit-panel-close" onclick="closeOnlineModal()">✕</button>
+      </div>
+      <div class="online-modal-body" id="online-modal-body">
+        <div class="online-empty">
+          <div class="online-empty-icon">📱</div>
+          <div class="online-empty-text">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WhatsApp Popup -->
+  <div class="wa-popup-overlay" id="wa-popup">
+    <div class="wa-popup">
+      <div class="wa-popup-icon">📱</div>
+      <div class="wa-popup-title" id="wa-popup-title">Order Ready!</div>
+      <div class="wa-popup-sub" id="wa-popup-sub">Send a WhatsApp message to the customer.</div>
+      <a class="wa-popup-btn" id="wa-popup-link" href="#" target="_blank">💬 Send WhatsApp Message</a>
+      <button class="wa-popup-skip" onclick="closeWaPopup()">Skip / No Phone Number</button>
+    </div>
+  </div>
+
+  <script src="pos-app.js"></script>
+  <script>
+    // ═══════════════════════════════════════════
+    //  STATE: All orders stored as cards
+    //  Draft orders saved in localStorage
+    //  Sent orders loaded from Supabase
+    // ═══════════════════════════════════════════
+
+    let allCards = []; // { id, token, cart[], customerName, note, status:'draft'|'sent', total, createdAt, sentAt }
+    let editingCardId = null;
+    let cardCounter = parseInt(localStorage.getItem('snk_card_counter') || '0');
+
+    function saveToLocalStorage() {
+      const drafts = allCards.filter(c => c.status === 'draft');
+      localStorage.setItem('snk_drafts', JSON.stringify(drafts));
+      localStorage.setItem('snk_card_counter', String(cardCounter));
+    }
+
+    function loadFromLocalStorage() {
+      try {
+        const raw = localStorage.getItem('snk_drafts');
+        if (raw) {
+          const drafts = JSON.parse(raw);
+          drafts.forEach(d => { d.status = 'draft'; allCards.push(d); });
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    // Load sent orders from Supabase
+    async function loadSentOrders() {
+      try {
+        const data = await supabaseSelect('pos_orders', 'select=*');
+        data.forEach(order => {
+          // Don't duplicate
+          if (allCards.find(c => c.token === order.token && c.status === 'sent')) return;
+
+          const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+          allCards.push({
+            id: 'sent-' + order.id,
+            token: order.token,
+            cart: items.map(item => ({
+              menuItem: { id: item.name, name: item.name, price: item.price },
+              qty: item.qty,
+              flavour: item.flavour || null,
+              addons: item.addons || []
+            })),
+            customerName: order.customer_name || '',
+            note: order.note || '',
+            status: 'sent',
+            dbStatus: order.status,
+            total: order.total,
+            createdAt: order.created_at,
+            sentAt: order.created_at,
+            dbId: order.id
+          });
+        });
+        renderGrid();
+      } catch (e) { console.error('Failed to load sent orders:', e); }
+    }
+
+    // ═══════════════════════════════════════════
+    //  CREATE NEW DRAFT ORDER
+    // ═══════════════════════════════════════════
+
+    async function createNewDraft() {
+      cardCounter++;
+      const card = {
+        id: 'draft-' + cardCounter,
+        token: await generateToken(),
+        cart: [],
+        customerName: '',
+        note: '',
+        status: 'draft',
+        total: 0,
+        createdAt: new Date().toISOString()
+      };
+      allCards.unshift(card); // newest first
+      saveToLocalStorage();
+      renderGrid();
+      openEditPanel(card.id);
+    }
+
+    // ═══════════════════════════════════════════
+    //  RENDER CARDS GRID
+    // ═══════════════════════════════════════════
+
+    function renderGrid() {
+      const grid = document.getElementById('orders-grid');
+
+      // Sort: drafts first, then sent by newest
+      const sorted = [...allCards].sort((a, b) => {
+        if (a.status === 'draft' && b.status !== 'draft') return -1;
+        if (a.status !== 'draft' && b.status === 'draft') return 1;
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+
+      let html = '';
+
+      // New Order card (always first)
+      html += `<div class="new-order-card" onclick="createNewDraft()">
+        <div class="plus-icon">+</div>
+        <div class="plus-label">New Order</div>
+      </div>`;
+
+      // Online Orders card (second)
+      html += `<div class="online-orders-card" onclick="openOnlineModal()">
+        <div class="ol-icon">📱</div>
+        <div class="ol-label">Online Orders</div>
+        <div class="ol-count ${onlineOrderCount === 0 ? 'zero' : ''}" id="ol-count-badge">${onlineOrderCount} pending</div>
+      </div>`;
+
+      sorted.forEach(card => {
+        const isSent = card.status === 'sent';
+        const itemCount = card.cart.reduce((s, c) => s + (c.qty || 1), 0);
+        const total = calcCardTotal(card);
+        const timeStr = formatCardTime(card.createdAt);
+
+        html += `<div class="order-card ${isSent ? 'sent' : 'draft'}" onclick="openEditPanel('${card.id}')">`;
+
+        // Header
+        html += `<div class="order-card-header">
+          <div>
+            <div class="order-card-token">${card.token}</div>
+            <div class="order-card-customer">${card.customerName || 'Walk-in'}</div>
+          </div>
+          <span class="${isSent ? 'card-badge-sent' : 'card-badge-draft'}">${isSent ? (card.dbStatus || 'sent') : 'Draft'}</span>
+        </div>`;
+
+        // Body — item list
+        html += `<div class="order-card-body">`;
+        if (card.cart.length === 0) {
+          html += `<div class="order-card-empty">No items — tap to add</div>`;
+        } else {
+          card.cart.slice(0, 5).forEach(entry => {
+            const name = entry.menuItem?.name || entry.name || '?';
+            html += `<div class="order-card-item-line">
+              <span class="oname">${name}</span>
+              <span class="oqty">×${entry.qty || 1}</span>
+            </div>`;
+          });
+          if (card.cart.length > 5) {
+            html += `<div class="order-card-item-line" style="color:var(--text-muted);font-style:italic;">+${card.cart.length - 5} more...</div>`;
+          }
+        }
+        html += `</div>`;
+
+        // Footer
+        html += `<div class="order-card-footer">
+          <span class="order-card-total">₹${total}</span>
+          <span class="order-card-time">${timeStr}</span>
+        </div>`;
+
+        html += `</div>`;
+      });
+
+      grid.innerHTML = html;
+    }
+
+    function calcCardTotal(card) {
+      if (card.total && card.status === 'sent') return card.total;
+      let total = 0;
+      card.cart.forEach(entry => {
+        const price = entry.menuItem?.price || entry.price || 0;
+        const qty = entry.qty || 1;
+        const addonTotal = (entry.addons || []).reduce((s, a) => s + (a.price || 0), 0);
+        total += (price + addonTotal) * qty;
+      });
+      return total;
+    }
+
+    function formatCardTime(isoStr) {
+      if (!isoStr) return '';
+      const d = new Date(isoStr);
+      return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+
+    // ═══════════════════════════════════════════
+    //  EDIT PANEL (slide-in)
+    // ═══════════════════════════════════════════
+
+    function openEditPanel(cardId) {
+      editingCardId = cardId;
+      const card = allCards.find(c => c.id === cardId);
+      if (!card) return;
+
+      const overlay = document.getElementById('edit-overlay');
+      const panel = document.getElementById('edit-panel');
+      const isSent = card.status === 'sent';
+
+      panel.classList.toggle('is-sent', isSent);
+      document.getElementById('edit-title').textContent = card.token + (isSent ? ' (Sent)' : '');
+      document.getElementById('edit-customer').value = card.customerName || '';
+      document.getElementById('edit-note').value = card.note || '';
+      document.getElementById('edit-customer').disabled = isSent;
+      document.getElementById('edit-note').disabled = isSent;
+
+      // Load phone — from card.phone or extract from note
+      let phone = card.phone || '';
+      if (!phone && card.note) {
+        const phoneMatch = card.note.match(/Phone:\s*(?:\+?91)?\s*(\d{10})/);
+        if (phoneMatch) phone = phoneMatch[1];
+      }
+      document.getElementById('edit-phone').value = phone;
+      document.getElementById('edit-phone').disabled = isSent;
+
+      updateWaButton();
+      renderEditBody();
+      overlay.classList.add('show');
+    }
+
+    function updateWaButton() {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (!card) return;
+
+      const waBtn = document.getElementById('btn-send-wa');
+      const phone = document.getElementById('edit-phone').value.trim();
+
+      if (phone && /^\d{10}$/.test(phone)) {
+        const name = card.customerName || document.getElementById('edit-customer').value.trim() || 'Customer';
+        const total = calcCardTotal(card);
+
+        let itemLines = '';
+        card.cart.forEach(entry => {
+          const itemName = entry.menuItem?.name || entry.name || '?';
+          itemLines += '\n' + String.fromCodePoint(0x2022) + ' ' + itemName + ' x' + (entry.qty || 1);
+        });
+
+        const lines = [
+          'Hey ' + name + '! Thank you for ordering from *SNACITO*!',
+          '',
+          '*Order ID:* ' + card.token,
+          '*Items:*' + itemLines,
+          '',
+          '*Total:* Rs.' + total,
+          '',
+          'Pick up at *SNACITO Stall*, Main Sports Ground, JKLU',
+          '27-29 March 2026',
+          '',
+          'See you there!'
+        ];
+        const msg = lines.join('\n');
+
+        waBtn.href = 'https://wa.me/91' + phone + '?text=' + encodeURIComponent(msg);
+        waBtn.style.display = '';
+      } else {
+        waBtn.style.display = 'none';
+      }
+    }
+
+    // Update WA button live as phone is typed
+    document.getElementById('edit-phone').addEventListener('input', updateWaButton);
+
+    function closeEditPanel() {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (card && card.status === 'draft') {
+        card.customerName = document.getElementById('edit-customer').value.trim();
+        card.note = document.getElementById('edit-note').value.trim();
+        card.phone = document.getElementById('edit-phone').value.trim();
+        card.total = calcCardTotal(card);
+
+        // If draft has no items, discard it entirely
+        if (card.cart.length === 0) {
+          allCards = allCards.filter(c => c.id !== card.id);
+        }
+
+        saveToLocalStorage();
+      }
+
+      editingCardId = null;
+      document.getElementById('edit-overlay').classList.remove('show');
+      renderGrid();
+    }
+
+    // Close on backdrop click
+    document.getElementById('edit-overlay').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeEditPanel();
+    });
+
+    function renderEditBody() {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (!card) return;
+
+      const body = document.getElementById('edit-body');
+      const isSent = card.status === 'sent';
+      let html = '';
+
+      // Current cart items
+      html += `<div class="edit-section-title">🧾 Order Items</div>`;
+      if (card.cart.length === 0) {
+        html += `<div style="text-align:center; color:var(--text-muted); padding:16px 0; font-size:0.85rem;">No items yet — add from menu below</div>`;
+      } else {
+        card.cart.forEach((entry, idx) => {
+          const name = entry.menuItem?.name || entry.name || '?';
+          const price = entry.menuItem?.price || entry.price || 0;
+          const addonCost = (entry.addons || []).reduce((s, a) => s + (a.price || 0), 0);
+          const lineTotal = (price + addonCost) * (entry.qty || 1);
+          let detail = '';
+          if (entry.flavour) detail += entry.flavour;
+          if (entry.addons && entry.addons.length > 0) {
+            if (detail) detail += ' · ';
+            detail += entry.addons.map(a => a.name).join(', ');
+          }
+
+          html += `<div class="edit-cart-item">
+            <div class="eci-info">
+              <div class="eci-name">${name}</div>
+              ${detail ? `<div class="eci-detail">${detail}</div>` : ''}
+            </div>`;
+          if (!isSent) {
+            html += `<div class="qty-controls">
+              <button class="qty-btn ${(entry.qty || 1) <= 1 ? 'remove' : ''}" onclick="editChangeQty(${idx}, -1)">${(entry.qty || 1) <= 1 ? '✕' : '−'}</button>
+              <span class="qty-val">${entry.qty || 1}</span>
+              <button class="qty-btn" onclick="editChangeQty(${idx}, 1)">+</button>
+            </div>`;
+          } else {
+            html += `<span class="qty-val" style="margin-right:8px;">×${entry.qty || 1}</span>`;
+          }
+          html += `<div class="eci-price">₹${lineTotal}</div>
+          </div>`;
+        });
+      }
+
+      // Menu (only for drafts)
+      if (!isSent) {
+        MENU.categories.forEach(cat => {
+          html += `<div class="edit-section-title add-section">${cat.icon} ${cat.name}</div>`;
+          html += `<div class="edit-menu-grid">`;
+          cat.items.forEach(item => {
+            const inCart = card.cart.filter(c => (c.menuItem?.id || c.id) === item.id);
+            const qty = inCart.reduce((s, c) => s + (c.qty || 1), 0);
+
+            html += `<button class="edit-menu-btn ${qty > 0 ? 'has-qty' : ''}" onclick="editAddItem('${item.id}')">
+              ${qty > 0 ? `<span class="em-qty">${qty}</span>` : ''}
+              <div class="em-name">${item.name}</div>
+              <div class="em-price">₹${item.price}</div>
+            </button>`;
+          });
+          html += `</div>`;
+        });
+      }
+
+      body.innerHTML = html;
+      updateEditTotal();
+    }
+
+    function updateEditTotal() {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (!card) return;
+
+      const total = calcCardTotal(card);
+      document.getElementById('edit-total').textContent = `₹${total}`;
+
+      const sendBtn = document.getElementById('btn-send-order');
+      if (card.status === 'draft') {
+        sendBtn.disabled = card.cart.length === 0;
+        sendBtn.style.display = '';
+      } else {
+        sendBtn.style.display = 'none';
+      }
+    }
+
+    // ═══════════════════════════════════════════
+    //  EDIT PANEL ACTIONS
+    // ═══════════════════════════════════════════
+
+    function editAddItem(itemId) {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (!card || card.status === 'sent') return;
+
+      const item = findMenuItem(itemId);
+      if (!item) return;
+
+      if (item.hasFlavours || item.hasAddons) {
+        openAddonModalForEdit(item);
+      } else {
+        const existing = card.cart.find(c => (c.menuItem?.id) === item.id && !c.flavour);
+        if (existing) {
+          existing.qty++;
+        } else {
+          card.cart.push({ menuItem: item, qty: 1, flavour: null, addons: [] });
+        }
+        saveToLocalStorage();
+        renderEditBody();
+      }
+    }
+
+    function editChangeQty(idx, delta) {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (!card || card.status === 'sent') return;
+
+      card.cart[idx].qty = (card.cart[idx].qty || 1) + delta;
+      if (card.cart[idx].qty <= 0) card.cart.splice(idx, 1);
+      saveToLocalStorage();
+      renderEditBody();
+    }
+
+    function findMenuItem(id) {
+      for (const cat of MENU.categories) {
+        for (const item of cat.items) {
+          if (item.id === id) return item;
+        }
+      }
+      return null;
+    }
+
+    // ─── Addon modal for edit panel ───
+    function openAddonModalForEdit(item) {
+      const modal = document.getElementById('addon-modal');
+      const body = document.getElementById('modal-body');
+      document.getElementById('modal-title').textContent = item.name;
+
+      let html = '';
+      if (item.hasFlavours && item.flavours) {
+        html += `<div class="chip-label">Choose Flavour</div><div class="chip-group">`;
+        item.flavours.forEach((f, i) => {
+          html += `<label class="chip ${i === 0 ? 'selected' : ''}" onclick="toggleRadioChip(this)">
+            <input type="radio" name="modal-flavour" value="${f}" ${i === 0 ? 'checked' : ''}><span>${f}</span>
+          </label>`;
+        });
+        html += `</div>`;
+      }
+      if (item.hasAddons && item.addons) {
+        html += `<div class="chip-label" style="margin-top:16px;">Add-Ons (Optional)</div><div class="chip-group">`;
+        item.addons.forEach(a => {
+          html += `<label class="chip" onclick="toggleCheckChip(this)">
+            <input type="checkbox" name="modal-addon" value="${a.name}" data-price="${a.price}"><span>${a.name} +₹${a.price}</span>
+          </label>`;
+        });
+        html += `</div>`;
+      }
+
+      body.innerHTML = html;
+      modal.classList.add('show');
+
+      document.getElementById('modal-confirm').onclick = () => {
+        const card = allCards.find(c => c.id === editingCardId);
+        if (!card) return;
+
+        const flavourEl = body.querySelector('input[name="modal-flavour"]:checked');
+        const flavour = flavourEl ? flavourEl.value : null;
+        const addons = [];
+        body.querySelectorAll('input[name="modal-addon"]:checked').forEach(cb => {
+          addons.push({ name: cb.value, price: parseInt(cb.dataset.price) });
+        });
+
+        card.cart.push({ menuItem: item, qty: 1, flavour, addons });
+        saveToLocalStorage();
+        closeAddonModal();
+        renderEditBody();
+      };
+    }
+
+    function closeAddonModal() {
+      document.getElementById('addon-modal').classList.remove('show');
+    }
+
+    function toggleRadioChip(label) {
+      label.closest('.chip-group').querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+      label.classList.add('selected');
+    }
+
+    function toggleCheckChip(label) {
+      setTimeout(() => {
+        const cb = label.querySelector('input');
+        label.classList.toggle('selected', cb.checked);
+      }, 0);
+    }
+
+    // ═══════════════════════════════════════════
+    //  SEND ORDER TO KITCHEN
+    // ═══════════════════════════════════════════
+
+    document.getElementById('btn-send-order').addEventListener('click', async () => {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (!card || card.cart.length === 0 || card.status !== 'draft') return;
+
+      // Save customer info
+      card.customerName = document.getElementById('edit-customer').value.trim();
+      card.note = document.getElementById('edit-note').value.trim();
+      card.phone = document.getElementById('edit-phone').value.trim();
+
+      const btn = document.getElementById('btn-send-order');
+      btn.disabled = true;
+      btn.textContent = '⏳ Sending...';
+
+      const items = card.cart.map(entry => ({
+        name: entry.menuItem?.name || entry.name,
+        qty: entry.qty || 1,
+        price: entry.menuItem?.price || entry.price || 0,
+        flavour: entry.flavour || null,
+        addons: entry.addons || []
+      }));
+
+      const total = calcCardTotal(card);
+
+      try {
+        const result = await supabaseInsert('pos_orders', {
+          token: card.token,
+          items: items,
+          customer_name: card.customerName || 'Walk-in',
+          note: card.note + (card.phone ? ' | Phone: ' + card.phone : ''),
+          status: 'new',
+          total: total
+        });
+
+        // Mark as sent
+        card.status = 'sent';
+        card.dbStatus = 'new';
+        card.total = total;
+        card.sentAt = new Date().toISOString();
+        if (result && result.id) card.dbId = result.id;
+
+        // Remove from drafts in localStorage
+        saveToLocalStorage();
+        showToast(`Order ${card.token} sent to kitchen!`, '🔔');
+
+        closeEditPanel();
+      } catch (err) {
+        console.error('Failed to send order:', err);
+        showToast('Failed to send. Check connection.', '❌');
+      }
+
+      btn.disabled = false;
+      btn.textContent = '🔔 Send to Kitchen';
+    });
+
+    // Customer name live-save
+    document.getElementById('edit-customer').addEventListener('input', () => {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (card && card.status === 'draft') {
+        card.customerName = document.getElementById('edit-customer').value.trim();
+      }
+    });
+
+    // ═══════════════════════════════════════════
+    //  ONLINE ORDERS (from main website)
+    // ═══════════════════════════════════════════
+
+    let onlineOrders = [];
+    let onlineOrderCount = 0;
+    let importedOnlineIds = JSON.parse(localStorage.getItem('snk_imported_online') || '[]');
+
+    function saveImportedIds() {
+      localStorage.setItem('snk_imported_online', JSON.stringify(importedOnlineIds));
+    }
+
+    async function fetchOnlineOrders() {
+      try {
+        const data = await supabaseSelect('orders', 'select=*&order=id.desc');
+        onlineOrders = data || [];
+        onlineOrderCount = onlineOrders.filter(o => !importedOnlineIds.includes(o.order_id)).length;
+        // Update badge if visible
+        const badge = document.getElementById('ol-count-badge');
+        if (badge) {
+          badge.textContent = onlineOrderCount + ' pending';
+          badge.classList.toggle('zero', onlineOrderCount === 0);
+        }
+      } catch (e) { console.error('Failed to fetch online orders:', e); }
+    }
+
+    function openOnlineModal() {
+      fetchOnlineOrders().then(() => renderOnlineModal());
+      document.getElementById('online-modal').classList.add('show');
+    }
+
+    function closeOnlineModal() {
+      document.getElementById('online-modal').classList.remove('show');
+    }
+
+    document.getElementById('online-modal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeOnlineModal();
+    });
+
+    function renderOnlineModal() {
+      const body = document.getElementById('online-modal-body');
+
+      if (onlineOrders.length === 0) {
+        body.innerHTML = `<div class="online-empty">
+          <div class="online-empty-icon">📱</div>
+          <div class="online-empty-text">No online orders yet</div>
+        </div>`;
+        return;
+      }
+
+      let html = '';
+      onlineOrders.forEach(order => {
+        const imported = importedOnlineIds.includes(order.order_id);
+        const time = order.created_at ? new Date(order.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
+
+        html += `<div class="online-order-row ${imported ? 'already-imported' : ''}" onclick="${imported ? '' : `importOnlineOrder('${order.order_id}')`}">`;
+        // Extract total from items text (e.g. "Total: ₹88") since amount may be 0 for counter orders
+        const totalMatch = (order.items || '').match(/Total:\s*₹(\d+)/);
+        const displayTotal = totalMatch ? totalMatch[1] : (order.amount || 0);
+
+        html += `<div class="oo-header">
+          <div>
+            <div class="oo-id">${order.order_id || '—'}</div>
+            <div class="oo-name">${order.name || 'Unknown'} · ${order.phone || ''}</div>
+          </div>
+          <div class="oo-amount">₹${displayTotal}</div>
+        </div>`;
+        html += `<div class="oo-items">${(order.items || '').replace(/\n/g, '<br>')}</div>`;
+        html += `<div class="oo-footer">
+          <span class="oo-time">${time}</span>
+          ${imported ? '<span class="oo-imported-badge">Imported</span>' : '<span class="oo-import-badge">Tap to Import</span>'}
+        </div>`;
+        html += `</div>`;
+      });
+
+      body.innerHTML = html;
+    }
+
+    async function importOnlineOrder(orderId) {
+      const order = onlineOrders.find(o => o.order_id === orderId);
+      if (!order) return;
+
+      // Parse the text items into cart entries
+      const cartItems = parseOnlineItems(order.items || '');
+
+      cardCounter++;
+      const card = {
+        id: 'draft-' + cardCounter,
+        token: await generateToken(),
+        cart: cartItems,
+        customerName: order.name || '',
+        note: `Online Order ${order.order_id} | Phone: ${order.phone || '—'} | Paid: ₹${order.amount || 0}`,
+        status: 'draft',
+        total: 0,
+        createdAt: new Date().toISOString(),
+        onlineOrderId: order.order_id
+      };
+      card.total = calcCardTotal(card);
+
+      allCards.unshift(card);
+      importedOnlineIds.push(order.order_id);
+      saveImportedIds();
+      saveToLocalStorage();
+
+      showToast(`Imported ${order.order_id} — ${order.name}`, '📱');
+      closeOnlineModal();
+      renderGrid();
+      openEditPanel(card.id);
+    }
+
+    // Parse the plain-text items note into structured cart items
+    function parseOnlineItems(text) {
+      const cart = [];
+      const lines = text.split('\n');
+
+      lines.forEach(line => {
+        line = line.trim();
+        if (!line || line.startsWith('---') || line.startsWith('Total:') || line.startsWith('Add-On:') || line.startsWith('Note:')) return;
+        if (line.startsWith('└─') || line.startsWith('└─')) return; // sub-items (flavours, addons)
+
+        // Match: "Item Name × Qty = ₹Price"
+        const match = line.match(/^(.+?)\s*×\s*(\d+)\s*=\s*₹(\d+)/);
+        if (match) {
+          const name = match[1].trim();
+          const qty = parseInt(match[2]) || 1;
+          const total = parseInt(match[3]) || 0;
+          const unitPrice = qty > 0 ? Math.round(total / qty) : total;
+
+          // Try to find a matching POS menu item
+          const menuItem = findMenuItem(name.toLowerCase().replace(/[^a-z0-9]/g, ''));
+
+          cart.push({
+            menuItem: menuItem || { id: name, name: name, price: unitPrice },
+            qty: qty,
+            flavour: null,
+            addons: []
+          });
+        }
+      });
+
+      return cart;
+    }
+
+    // ═══════════════════════════════════════════
+    //  INIT
+    // ═══════════════════════════════════════════
+
+    loadFromLocalStorage();
+    loadSentOrders();
+    fetchOnlineOrders();
+    renderGrid();
+    startClock('clock');
+
+    // Poll to update sent order statuses + online orders
+    let readyNotifiedIds = new Set(); // track which orders we've already shown WA popup for
+
+    setInterval(async () => {
+      try {
+        const data = await supabaseSelect('pos_orders', 'select=*');
+        data.forEach(order => {
+          const card = allCards.find(c => c.token === order.token && c.status === 'sent');
+          if (card) {
+            const prevStatus = card.dbStatus;
+            if (prevStatus !== order.status) {
+              card.dbStatus = order.status;
+
+              // If status just changed to 'ready', show WhatsApp popup
+              if (order.status === 'ready' && !readyNotifiedIds.has(order.id)) {
+                readyNotifiedIds.add(order.id);
+                showWaPopup(card, order);
+              }
+            }
+          }
+        });
+        renderGrid();
+      } catch (e) { /* retry */ }
+
+      // Also refresh online order count
+      fetchOnlineOrders();
+    }, 5000);
+
+    // ═══════════════════════════════════════════
+    //  WHATSAPP POPUP (for order ready notification)
+    // ═══════════════════════════════════════════
+
+    let waPopupQueue = []; // queue multiple ready notifications
+
+    function showWaPopup(card, order) {
+      const name = card.customerName || order.customer_name || 'Customer';
+      let phone = '';
+
+      // Extract phone from note (online orders: 'Phone: XXXXXXXXXX')
+      const note = card.note || order.note || '';
+      const phoneMatch = note.match(/Phone:\s*(?:\+?91)?\s*(\d{10})/);
+      if (phoneMatch) phone = phoneMatch[1];
+
+      document.getElementById('wa-popup-title').textContent = `${card.token} — ${name} is READY!`;
+
+      if (phone) {
+        document.getElementById('wa-popup-sub').textContent = `Customer phone: +91 ${phone}. Send them a message that their order is ready for pickup!`;
+        const lines = [
+          'Hi ' + name + '! Your *SNACITO* order (' + card.token + ') is *ready*!',
+          '',
+          'Please collect from the *SNACITO Stall* at Main Sports Ground, JKLU.',
+          '',
+          'Thank you!'
+        ];
+        const msg = lines.join('\n');
+        const waLink = 'https://wa.me/91' + phone + '?text=' + encodeURIComponent(msg);
+        document.getElementById('wa-popup-link').href = waLink;
+        document.getElementById('wa-popup-link').style.display = '';
+      } else {
+        document.getElementById('wa-popup-sub').textContent = `No phone number found for this order.`;
+        document.getElementById('wa-popup-link').style.display = 'none';
+      }
+
+      document.getElementById('wa-popup').classList.add('show');
+      playNotificationSound();
+    }
+
+    function closeWaPopup() {
+      document.getElementById('wa-popup').classList.remove('show');
+    }
+
+    document.getElementById('wa-popup').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeWaPopup();
+    });
+  </script>
+
+</body>
+</html>

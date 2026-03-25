@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SNACITO POS — Kitchen Display</title>
+  <link rel="stylesheet" href="../pos-style.css">
+  <style>
+    body { background: #060200; }
+
+    .kitchen-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: var(--bg-card);
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .kitchen-header h1 {
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--brand-gold);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .kitchen-stats {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .kitchen-stat {
+      text-align: center;
+    }
+
+    .kitchen-stat-val {
+      font-size: 1.6rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .kitchen-stat-val.gold { color: var(--brand-gold); }
+    .kitchen-stat-val.orange { color: var(--warning); }
+    .kitchen-stat-val.green { color: var(--success); }
+
+    .kitchen-stat-label {
+      font-size: 0.6rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 2px;
+    }
+
+    .kitchen-filter-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 12px 24px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .kitchen-filter-btn {
+      padding: 6px 16px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      font-family: inherit;
+      color: var(--text-muted);
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: 100px;
+      cursor: pointer;
+      transition: var(--transition);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .kitchen-filter-btn:hover { color: var(--text-secondary); }
+    .kitchen-filter-btn.active {
+      background: var(--brand-gold);
+      color: var(--bg-primary);
+      border-color: var(--brand-gold);
+    }
+
+    .kitchen-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 60vh;
+      text-align: center;
+    }
+
+    .kitchen-empty-icon { font-size: 5rem; opacity: 0.2; margin-bottom: 16px; }
+    .kitchen-empty-text { font-size: 1.2rem; font-weight: 600; color: var(--text-muted); }
+    .kitchen-empty-sub { font-size: 0.85rem; color: var(--text-muted); opacity: 0.5; margin-top: 6px; }
+
+    .live-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+      margin-right: 6px;
+    }
+
+    .kitchen-action-btn {
+      flex: 1;
+      padding: 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      font-family: inherit;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .kitchen-action-btn.start { background: var(--warning); color: #000; }
+    .kitchen-action-btn.start:hover { background: #e8950b; }
+    .kitchen-action-btn.done { background: var(--success); color: #000; }
+    .kitchen-action-btn.done:hover { background: #27ae60; }
+    .kitchen-action-btn.finish { background: rgba(255,255,255,0.08); color: var(--text-muted); }
+    .kitchen-action-btn.finish:hover { background: rgba(255,255,255,0.15); }
+
+    .order-timer {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .order-timer.overdue { color: var(--danger); }
+    /* WhatsApp popup */
+    .wa-popup-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      z-index: 500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .wa-popup-overlay.show { display: flex; }
+    .wa-popup {
+      background: var(--bg-card);
+      border: 2px solid #25D366;
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      max-width: 420px;
+      width: 90vw;
+      text-align: center;
+      animation: popIn 0.3s ease;
+    }
+    .wa-popup-icon { font-size: 3rem; margin-bottom: 12px; }
+    .wa-popup-title { font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin-bottom: 6px; }
+    .wa-popup-sub { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.5; }
+    .wa-popup-btn {
+      display: inline-block;
+      padding: 14px 32px;
+      background: #25D366;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border-radius: 12px;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: 0.2s;
+    }
+    .wa-popup-btn:hover { background: #1ebe5d; transform: scale(1.03); }
+    .wa-popup-skip {
+      display: block;
+      margin-top: 12px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="kitchen-header">
+    <div style="display:flex; align-items:center; gap:16px;">
+      <h1>🍳 Kitchen Display</h1>
+      <span style="font-size:0.75rem; color:var(--success); font-weight:600;"><span class="live-dot"></span>LIVE</span>
+    </div>
+    <div class="kitchen-stats">
+      <div class="kitchen-stat">
+        <div class="kitchen-stat-val gold" id="stat-new">0</div>
+        <div class="kitchen-stat-label">New</div>
+      </div>
+      <div class="kitchen-stat">
+        <div class="kitchen-stat-val orange" id="stat-preparing">0</div>
+        <div class="kitchen-stat-label">Preparing</div>
+      </div>
+      <div class="kitchen-stat">
+        <div class="kitchen-stat-val green" id="stat-ready">0</div>
+        <div class="kitchen-stat-label">Ready</div>
+      </div>
+      <span class="pos-topbar-clock" id="clock" style="margin-left:12px;"></span>
+      <nav class="pos-nav-links">
+        <a href="../" class="pos-nav-link">Order</a>
+        <a href="./" class="pos-nav-link active">Kitchen</a>
+        <a href="../dashboard/" class="pos-nav-link">Dashboard</a>
+        <a href="#" onclick="logoutPos(); return false;" class="pos-nav-link" style="color:#e74c3c; margin-left:12px;">Logout <span style="font-size:0.8rem">🚪</span></a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="kitchen-filter-tabs">
+    <button class="kitchen-filter-btn active" data-filter="active">🔥 Active Orders</button>
+    <button class="kitchen-filter-btn" data-filter="new">New</button>
+    <button class="kitchen-filter-btn" data-filter="preparing">Preparing</button>
+    <button class="kitchen-filter-btn" data-filter="ready">Ready</button>
+    <button class="kitchen-filter-btn" data-filter="all">All</button>
+  </div>
+
+  <div class="kitchen-grid" id="kitchen-grid">
+    <div class="kitchen-empty">
+      <div class="kitchen-empty-icon">🍳</div>
+      <div class="kitchen-empty-text">Waiting for orders...</div>
+      <div class="kitchen-empty-sub">New orders will pop up here in real-time</div>
+    </div>
+  </div>
+
+  <!-- WhatsApp Popup -->
+  <div class="wa-popup-overlay" id="wa-popup">
+    <div class="wa-popup">
+      <div class="wa-popup-icon">📱</div>
+      <div class="wa-popup-title" id="wa-popup-title">Order Ready!</div>
+      <div class="wa-popup-sub" id="wa-popup-sub">Send a WhatsApp message to let the customer know their order is ready.</div>
+      <a class="wa-popup-btn" id="wa-popup-link" href="#" target="_blank">💬 Send WhatsApp Message</a>
+      <button class="wa-popup-skip" onclick="closeWhatsAppPopup()">Skip / No Phone Number</button>
+    </div>
+  </div>
+
+  <script src="../pos-app.js"></script>
+  <script>
+    const orders = new Map();
+    let currentFilter = 'active';
+    let knownIds = new Set();
+    let newOrderIds = new Set(); // track brand-new orders for animation
+    let lastDataHash = ''; // track changes to avoid unnecessary re-renders
+
+    // Build a simple hash of orders to detect changes
+    function buildDataHash() {
+      const entries = [...orders.values()].map(o => `${o.id}:${o.status}`).sort().join('|');
+      return entries;
+    }
+
+    function renderKitchen(forceNewIds) {
+      const grid = document.getElementById('kitchen-grid');
+      const filtered = [...orders.values()].filter(o => {
+        if (currentFilter === 'active') return o.status === 'new' || o.status === 'preparing';
+        if (currentFilter === 'all') return true;
+        return o.status === currentFilter;
+      }).sort((a, b) => {
+        const statusOrder = { new: 0, preparing: 1, ready: 2, completed: 3 };
+        return (statusOrder[a.status] || 9) - (statusOrder[b.status] || 9) || new Date(b.created_at) - new Date(a.created_at);
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="kitchen-empty">
+          <div class="kitchen-empty-icon">🍳</div>
+          <div class="kitchen-empty-text">No ${currentFilter === 'active' ? 'active' : currentFilter} orders</div>
+          <div class="kitchen-empty-sub">Waiting for incoming orders...</div>
+        </div>`;
+        updateStats();
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(order => {
+        const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+        const isNew = forceNewIds && forceNewIds.has(order.id);
+
+        html += `<div class="kitchen-order-card status-${order.status}${isNew ? ' new-order-flash' : ''}" id="order-card-${order.id}" style="${isNew ? '' : 'animation:none;'}">`;
+        html += `<div class="kitchen-order-header">
+          <div>
+            <div class="kitchen-order-token">${order.token}</div>
+            <div class="kitchen-order-customer">${order.customer_name || 'Walk-in'}</div>
+          </div>
+          <div style="text-align:right;">
+            <span class="status-badge ${order.status}">${order.status}</span>
+            <div class="order-timer" data-created="${order.created_at}" style="margin-top:6px;"></div>
+          </div>
+        </div>`;
+
+        if (order.note) {
+          html += `<div class="kitchen-order-note">📝 ${order.note}</div>`;
+        }
+
+        html += `<div class="kitchen-order-body">`;
+        if (Array.isArray(items)) {
+          items.forEach(item => {
+            html += `<div class="kitchen-order-item">
+              <div>
+                <div class="kitchen-item-name">${item.name}</div>`;
+            if (item.flavour) html += `<div class="kitchen-item-addons">Flavour: ${item.flavour}</div>`;
+            if (item.addons && item.addons.length > 0) {
+              html += `<div class="kitchen-item-addons">Add-ons: ${item.addons.map(a => a.name).join(', ')}</div>`;
+            }
+            html += `</div>
+              <div class="kitchen-item-qty">${item.qty}</div>
+            </div>`;
+          });
+        }
+        html += `</div>`;
+
+        html += `<div class="kitchen-order-footer">`;
+        if (order.status === 'new') {
+          html += `<button class="kitchen-action-btn start" onclick="updateStatus(${order.id}, 'preparing')">🔥 Start Preparing</button>`;
+        } else if (order.status === 'preparing') {
+          html += `<button class="kitchen-action-btn done" onclick="updateStatus(${order.id}, 'ready')">✅ Mark Ready</button>`;
+        } else if (order.status === 'ready') {
+          html += `<button class="kitchen-action-btn finish" onclick="updateStatus(${order.id}, 'completed')">Done & Clear</button>`;
+        }
+        html += `</div></div>`;
+      });
+
+      grid.innerHTML = html;
+      updateStats();
+      updateTimers();
+    }
+
+    function updateStats() {
+      const all = [...orders.values()];
+      document.getElementById('stat-new').textContent = all.filter(o => o.status === 'new').length;
+      document.getElementById('stat-preparing').textContent = all.filter(o => o.status === 'preparing').length;
+      document.getElementById('stat-ready').textContent = all.filter(o => o.status === 'ready').length;
+    }
+
+    function updateTimers() {
+      document.querySelectorAll('.order-timer[data-created]').forEach(el => {
+        const created = new Date(el.dataset.created);
+        const diffSec = Math.floor((Date.now() - created.getTime()) / 1000);
+        const mins = Math.floor(diffSec / 60);
+        const secs = diffSec % 60;
+        el.textContent = `${mins}m ${String(secs).padStart(2, '0')}s`;
+        if (mins >= 10) el.classList.add('overdue');
+      });
+    }
+
+    async function updateStatus(id, newStatus) {
+      try {
+        await supabaseUpdate('pos_orders', id, { status: newStatus });
+        const order = orders.get(id);
+        if (order) {
+          const prevStatus = order.status;
+          order.status = newStatus;
+          lastDataHash = buildDataHash();
+          renderKitchen();
+
+          // If marked as ready, show WhatsApp popup
+          if (newStatus === 'ready') {
+            showWhatsAppPopup(order);
+          }
+        }
+        showToast(`Order ${orders.get(id)?.token || ''} → ${newStatus}`, '🔄');
+      } catch (err) {
+        console.error('Status update failed:', err);
+        showToast('Failed to update status', '❌');
+      }
+    }
+
+    function showWhatsAppPopup(order) {
+      const name = order.customer_name || 'Customer';
+      // Try to extract phone from note (online orders have 'Phone: XXXXXXXXXX')
+      let phone = '';
+      if (order.note) {
+        const phoneMatch = order.note.match(/Phone:\s*(\+?91)?\s*(\d{10})/);
+        if (phoneMatch) phone = phoneMatch[2];
+      }
+
+      const title = `${order.token} — ${name}`;
+      const sub = phone
+        ? `Customer phone: +91 ${phone}. Send them a message that their order is ready!`
+        : `No phone number found for this order. You can skip this step.`;
+
+      document.getElementById('wa-popup-title').textContent = title;
+      document.getElementById('wa-popup-sub').textContent = sub;
+
+      if (phone) {
+        const lines = [
+          'Hi ' + name + '! Your *SNACITO* order (' + order.token + ') is *ready*!',
+          '',
+          'Please collect from the *SNACITO Stall* at Main Sports Ground, JKLU.',
+          '',
+          'Thank you!'
+        ];
+        const msg = lines.join('\n');
+        const waLink = 'https://wa.me/91' + phone + '?text=' + encodeURIComponent(msg);
+        document.getElementById('wa-popup-link').href = waLink;
+        document.getElementById('wa-popup-link').style.display = '';
+      } else {
+        document.getElementById('wa-popup-link').style.display = 'none';
+      }
+
+      document.getElementById('wa-popup').classList.add('show');
+    }
+
+    function closeWhatsAppPopup() {
+      document.getElementById('wa-popup').classList.remove('show');
+    }
+
+    document.getElementById('wa-popup').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeWhatsAppPopup();
+    });
+
+    document.querySelectorAll('.kitchen-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.kitchen-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        renderKitchen();
+      });
+    });
+
+    async function loadOrders() {
+      try {
+        const data = await supabaseSelect('pos_orders', 'select=*');
+        data.forEach(order => { orders.set(order.id, order); knownIds.add(order.id); });
+        lastDataHash = buildDataHash();
+        renderKitchen();
+      } catch (err) { console.error('Failed to load orders:', err); }
+    }
+
+    async function pollOrders() {
+      try {
+        const data = await supabaseSelect('pos_orders', 'select=*');
+        let brandNewIds = new Set();
+        let hasChanges = false;
+
+        data.forEach(order => {
+          const existing = orders.get(order.id);
+          if (!existing) {
+            // Brand new order
+            orders.set(order.id, order);
+            if (knownIds.size > 0) brandNewIds.add(order.id);
+            knownIds.add(order.id);
+            hasChanges = true;
+          } else if (existing.status !== order.status) {
+            // Status changed externally (e.g. from dashboard)
+            orders.set(order.id, order);
+            hasChanges = true;
+          }
+        });
+
+        // Also detect deleted orders
+        if (data.length !== orders.size) {
+          const remoteIds = new Set(data.map(o => o.id));
+          for (const id of orders.keys()) {
+            if (!remoteIds.has(id)) { orders.delete(id); hasChanges = true; }
+          }
+        }
+
+        // Only re-render if something actually changed
+        if (hasChanges) {
+          lastDataHash = buildDataHash();
+          if (brandNewIds.size > 0) {
+            playNotificationSound();
+            renderKitchen(brandNewIds);
+          } else {
+            renderKitchen();
+          }
+        }
+        // Just update stats (lightweight, no DOM rebuild)
+        updateStats();
+      } catch (err) { /* retry next cycle */ }
+    }
+
+    loadOrders().then(() => { setInterval(pollOrders, 2500); });
+    startClock('clock');
+    setInterval(updateTimers, 1000);
+
+    document.addEventListener('click', () => {
+      if (!window._audioUnlocked) {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        ctx.resume();
+        window._audioUnlocked = true;
+      }
+    }, { once: true });
+  </script>
+
+</body>
+</html>
