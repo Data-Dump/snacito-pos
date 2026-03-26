@@ -87,12 +87,12 @@ const MENU = {
   categories: [
     {
       id: 'chaat',
-      name: 'Chips-Chaat',
+      name: 'BYOB',
       icon: '🍟',
       items: [
         {
           id: 'chaat-bag',
-          name: 'Chips-Chaat Bag',
+          name: 'BYOB',
           sub: 'with Veggies (Pyaz & Tamatar)',
           price: 39,
           badge: null,
@@ -135,7 +135,8 @@ const MENU = {
       name: 'Drinks',
       icon: '🥤',
       items: [
-        { id: 'nimbu-pani', name: 'OG Nimbu Pani', sub: 'Chilled & Refreshing', price: 15, badge: null }
+        { id: 'nimbu-pani', name: 'Nimbu Pani', sub: 'Chilled & Refreshing', price: 15, badge: null },
+        { id: 'nimbu-pani-soda', name: 'Nimbu Pani (Soda)', sub: 'Fizzy & Refreshing', price: 20, badge: null }
       ]
     }
   ]
