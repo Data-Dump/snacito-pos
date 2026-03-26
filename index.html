@@ -1345,14 +1345,35 @@
     function parseOnlineItems(text) {
       const cart = [];
       const lines = text.split('\n');
+      let currentItem = null;
 
       lines.forEach(line => {
         line = line.trim();
         if (!line || line.startsWith('---') || line.startsWith('Total:') || line.startsWith('Add-On:') || line.startsWith('Note:')) return;
-        if (line.startsWith('└─') || line.startsWith('└─')) return; // sub-items (flavours, addons)
 
-        // Match: "Item Name × Qty = ₹Price"
-        const match = line.match(/^(.+?)\s*×\s*(\d+)\s*=\s*₹(\d+)/);
+        // Sub-item (flavour or addon)
+        if (line.startsWith('└─')) {
+          if (!currentItem) return;
+          const subText = line.substring(2).trim();
+          
+          if (subText.includes('(+₹')) {
+            // Add-on: "Chipotle (+₹15)"
+            const addonMatch = subText.match(/(.+?)\s*\(\+₹(\d+)\)/);
+            if (addonMatch) {
+              currentItem.addons.push({
+                name: addonMatch[1].trim(),
+                price: parseInt(addonMatch[2]) || 0
+              });
+            }
+          } else {
+            // Flavour or simple sub-item
+            currentItem.flavour = subText;
+          }
+          return;
+        }
+
+        // Main item: "Item Name × Qty = ₹Price" or "Item Name x Qty = ₹Price"
+        const match = line.match(/^(.+?)\s*[×x]\s*(\d+)\s*=\s*₹(\d+)/);
         if (match) {
           const name = match[1].trim();
           const qty = parseInt(match[2]) || 1;
@@ -1362,12 +1383,13 @@
           // Try to find a matching POS menu item
           const menuItem = findMenuItem(name.toLowerCase().replace(/[^a-z0-9]/g, ''));
 
-          cart.push({
+          currentItem = {
             menuItem: menuItem || { id: name, name: name, price: unitPrice },
             qty: qty,
             flavour: null,
             addons: []
-          });
+          };
+          cart.push(currentItem);
         }
       });
 
