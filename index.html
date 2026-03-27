@@ -639,6 +639,14 @@
             <input type="tel" class="pos-input" id="edit-phone" placeholder="Phone Number or 0 if none" maxlength="10" style="border:none; border-left:1px solid var(--border-color); border-radius:0;">
           </div>
         </div>
+        <div class="edit-customer-row" style="margin-bottom:12px; align-items:center; gap:12px;">
+          <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">Payment:</span>
+          <label class="pos-toggle">
+            <input type="checkbox" id="edit-paid" checked>
+            <span class="pos-toggle-slider"></span>
+          </label>
+          <span id="edit-paid-label" style="font-size:0.85rem; font-weight:800; color:var(--success);">PAID</span>
+        </div>
         <div class="edit-total-row">
           <span class="edit-total-label">Total</span>
           <span class="edit-total-value" id="edit-total">₹0</span>
@@ -734,7 +742,8 @@
             total: order.total,
             createdAt: order.created_at,
             sentAt: order.created_at,
-            dbId: order.id
+            dbId: order.id,
+            paymentStatus: order.payment_status || 'paid'
           });
         });
         renderGrid();
@@ -755,7 +764,8 @@
         note: '',
         status: 'draft',
         total: 0,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        paymentStatus: 'paid'
       };
       allCards.unshift(card); // newest first
       saveToLocalStorage();
@@ -887,6 +897,12 @@
       }
       document.getElementById('edit-phone').value = phone;
       document.getElementById('edit-phone').disabled = false;
+
+      document.getElementById('edit-phone').disabled = false;
+
+      // Payment status
+      document.getElementById('edit-paid').checked = card.paymentStatus !== 'unpaid';
+      updatePaidLabel();
 
       updateWaButton();
       renderEditBody();
@@ -1223,7 +1239,8 @@
           customer_name: card.customerName || 'Walk-in',
           note: card.note + (card.phone ? ' | Phone: ' + card.phone : ''),
           status: 'new',
-          total: total
+          total: total,
+          payment_status: card.paymentStatus || 'paid'
         });
 
         // Mark as sent
@@ -1278,7 +1295,8 @@
           items: items,
           customer_name: card.customerName,
           note: card.note + (card.phone ? ' | Phone: ' + card.phone : ''),
-          total: card.total
+          total: card.total,
+          payment_status: card.paymentStatus || 'paid'
         });
 
         showToast(`Order ${card.token} updated!`, '💾');
@@ -1292,6 +1310,22 @@
       btn.disabled = false;
       btn.textContent = '💾 Update Order';
     });
+
+    document.getElementById('edit-paid').addEventListener('change', e => {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (card) card.paymentStatus = e.target.checked ? 'paid' : 'unpaid';
+      updatePaidLabel();
+      validateDraftEnable();
+    });
+
+    function updatePaidLabel() {
+      const isPaid = document.getElementById('edit-paid').checked;
+      const label = document.getElementById('edit-paid-label');
+      if (label) {
+        label.textContent = isPaid ? 'PAID' : 'NOT PAID';
+        label.style.color = isPaid ? 'var(--success)' : 'var(--danger)';
+      }
+    }
 
     // Customer name live-save (Updated to handle both status)
     document.getElementById('edit-customer').addEventListener('input', () => {
@@ -1499,8 +1533,8 @@
             if (prevStatus !== order.status) {
               card.dbStatus = order.status;
 
-              // If status just changed to 'ready', show WhatsApp popup
-              if (order.status === 'ready' && !readyNotifiedIds.has(order.id)) {
+              // If status just changed to 'ready' or 'completed', show WhatsApp popup
+              if ((order.status === 'ready' || order.status === 'completed') && !readyNotifiedIds.has(order.id)) {
                 readyNotifiedIds.add(order.id);
                 showWaPopup(card, order);
               }

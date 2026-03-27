@@ -84,6 +84,20 @@
       font-weight: 900;
       color: var(--brand-gold);
     }
+    
+    .unpaid-row {
+      background: rgba(231, 76, 60, 0.05) !important;
+    }
+    .unpaid-badge {
+      font-size: 0.6rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      background: var(--danger-dim);
+      color: var(--danger);
+      border-radius: 4px;
+      margin-left: 6px;
+      text-transform: uppercase;
+    }
 
     .no-orders-row td {
       text-align: center;
@@ -128,12 +142,12 @@
         <div class="stat-label">Preparing</div>
       </div>
       <div class="stat-card">
-        <div class="stat-value" id="stat-ready" style="color:var(--success)">0</div>
-        <div class="stat-label">Ready</div>
-      </div>
-      <div class="stat-card">
         <div class="stat-value" id="stat-completed" style="color:var(--text-muted)">0</div>
         <div class="stat-label">Completed</div>
+      </div>
+      <div class="stat-card" style="border-color:var(--danger);">
+        <div class="stat-value" id="stat-unpaid" style="color:var(--danger)">0</div>
+        <div class="stat-label">Not Paid</div>
       </div>
     </div>
 
@@ -152,8 +166,8 @@
       <button class="filter-btn active" data-filter="all">All</button>
       <button class="filter-btn" data-filter="new">New</button>
       <button class="filter-btn" data-filter="preparing">Preparing</button>
-      <button class="filter-btn" data-filter="ready">Ready</button>
       <button class="filter-btn" data-filter="completed">Completed</button>
+      <button class="filter-btn" data-filter="unpaid" style="color:var(--danger);">Not Paid</button>
     </div>
 
     <div class="table-wrap">
@@ -198,7 +212,11 @@
 
     function renderTable() {
       const tbody = document.getElementById('orders-tbody');
-      const filtered = allOrders.filter(o => dashFilter === 'all' || o.status === dashFilter);
+      const filtered = allOrders.filter(o => {
+        if (dashFilter === 'all') return true;
+        if (dashFilter === 'unpaid') return o.payment_status === 'unpaid';
+        return o.status === dashFilter;
+      });
 
       if (filtered.length === 0) {
         tbody.innerHTML = `<tr class="no-orders-row"><td colspan="7">No ${dashFilter === 'all' ? '' : dashFilter + ' '}orders found</td></tr>`;
@@ -209,9 +227,10 @@
       filtered.forEach(order => {
         const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
         const created = new Date(order.created_at);
+        const isUnpaid = order.payment_status === 'unpaid';
 
-        html += `<tr>`;
-        html += `<td class="token-cell">${order.token}</td>`;
+        html += `<tr class="${isUnpaid ? 'unpaid-row' : ''}" ${isUnpaid ? `onclick="showUnpaidAlert('${order.customer_name}', ${order.total})"` : ''} style="${isUnpaid ? 'cursor:pointer;' : ''}">`;
+        html += `<td class="token-cell">${order.token}${isUnpaid ? '<span class="unpaid-badge">UNPAID</span>' : ''}</td>`;
         html += `<td>${order.customer_name || 'Walk-in'}${order.note ? `<br><span style="font-size:0.7rem;color:var(--text-muted);">📝 ${order.note}</span>` : ''}</td>`;
 
         html += `<td class="items-cell">`;
@@ -232,11 +251,9 @@
         html += `<td class="actions-cell"><div class="status-actions">`;
         if (order.status === 'new') {
           html += `<button class="status-action-btn to-preparing" onclick="changeStatus(${order.id}, 'preparing')">Start</button>`;
-          html += `<button class="status-action-btn to-ready" onclick="changeStatus(${order.id}, 'ready')">Ready</button>`;
+          html += `<button class="status-action-btn to-ready" onclick="changeStatus(${order.id}, 'completed')">Ready</button>`;
         } else if (order.status === 'preparing') {
-          html += `<button class="status-action-btn to-ready" onclick="changeStatus(${order.id}, 'ready')">Ready</button>`;
-        } else if (order.status === 'ready') {
-          html += `<button class="status-action-btn to-completed" onclick="changeStatus(${order.id}, 'completed')">Complete</button>`;
+          html += `<button class="status-action-btn to-ready" onclick="changeStatus(${order.id}, 'completed')">Ready</button>`;
         } else {
           html += `<span style="font-size:0.7rem; color:var(--text-muted);">—</span>`;
         }
@@ -246,12 +263,23 @@
       tbody.innerHTML = html;
     }
 
+    function updatePaidLabel() {
+      const isPaid = document.getElementById('edit-paid').checked;
+      const label = document.getElementById('edit-paid-label');
+      label.textContent = isPaid ? 'PAID' : 'NOT PAID';
+      label.style.color = isPaid ? 'var(--success)' : 'var(--danger)';
+    }
+
+    function showUnpaidAlert(name, amount) {
+      alert(`⚠️ PENDING PAYMENT:\n₹${amount} due from ${name || 'Walk-in'}.`);
+    }
+
     function updateDashStats() {
       document.getElementById('stat-total-orders').textContent = allOrders.length;
       document.getElementById('stat-new').textContent = allOrders.filter(o => o.status === 'new').length;
       document.getElementById('stat-preparing').textContent = allOrders.filter(o => o.status === 'preparing').length;
-      document.getElementById('stat-ready').textContent = allOrders.filter(o => o.status === 'ready').length;
-      document.getElementById('stat-completed').textContent = allOrders.filter(o => o.status === 'completed').length;
+      document.getElementById('stat-completed').textContent = allOrders.filter(o => o.status === 'ready' || o.status === 'completed').length;
+      document.getElementById('stat-unpaid').textContent = allOrders.filter(o => o.payment_status === 'unpaid').length;
 
       const revenue = allOrders.reduce((s, o) => s + (o.total || 0), 0);
       document.getElementById('total-revenue').textContent = `₹${revenue.toLocaleString('en-IN')}`;
