@@ -259,9 +259,9 @@
 
     function renderItemSales() {
       const itemCounts = {};
+      let grandTotalItems = 0;
       
       allOrders.forEach(order => {
-        // Items are stored as JSON in pos_orders
         let items = [];
         try {
           items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
@@ -270,6 +270,7 @@
         if (Array.isArray(items)) {
           items.forEach(item => {
             const name = item.name || '';
+            const qty = parseInt(item.qty) || 1;
             let group = name;
 
             // Grouping Logic
@@ -281,9 +282,16 @@
                        name.toLowerCase().includes('byob') ||
                        name.toLowerCase().includes('chips chaat')) {
               group = 'All BYOB';
+            } else if (name.toLowerCase().includes('maggi')) {
+              group = 'All Maggi';
+            } else if (name.toLowerCase().includes('nimbu pani') || 
+                       name.toLowerCase().includes('with soda') || 
+                       name.toLowerCase().includes('without soda')) {
+              group = 'All Nimbu Pani';
             }
 
-            itemCounts[group] = (itemCounts[group] || 0) + (parseInt(item.qty) || 1);
+            itemCounts[group] = (itemCounts[group] || 0) + qty;
+            grandTotalItems += qty;
           });
         }
       });
@@ -296,12 +304,22 @@
         return;
       }
 
-      grid.innerHTML = sorted.map(([name, qty]) => `
+      let html = sorted.map(([name, qty]) => `
         <div class="stat-card">
           <div class="stat-value" style="font-size:1.6rem;">${qty}</div>
           <div class="stat-label">${name}</div>
         </div>
       `).join('');
+
+      // Add "All Sab Kuch" (Grand Total) at the end
+      html += `
+        <div class="stat-card" style="border-color:var(--brand-gold); background:var(--brand-gold-dim);">
+          <div class="stat-value" style="font-size:1.8rem; color:var(--brand-gold);">${grandTotalItems}</div>
+          <div class="stat-label" style="color:var(--brand-gold); font-weight:800;">ALL SAB KUCH (Total)</div>
+        </div>
+      `;
+
+      grid.innerHTML = html;
     }
 
     async function changeStatus(id, newStatus) {
