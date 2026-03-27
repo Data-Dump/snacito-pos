@@ -142,6 +142,11 @@
       <div class="total-banner-value" id="total-revenue">₹0</div>
     </div>
 
+    <div class="section-title">📊 Sales by Item (Qty)</div>
+    <div class="stats-row" id="item-sales-grid" style="margin-bottom:24px;">
+      <!-- Item sales rendered by JS -->
+    </div>
+
     <div class="filter-bar">
       <span style="font-size:0.72rem; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:1px;">Filter:</span>
       <button class="filter-btn active" data-filter="all">All</button>
@@ -184,6 +189,7 @@
         allOrders = await supabaseSelect('pos_orders', 'select=*');
         renderTable();
         updateDashStats();
+        renderItemSales();
       } catch (err) {
         console.error('Failed to load orders:', err);
         document.getElementById('orders-tbody').innerHTML = '<tr class="no-orders-row"><td colspan="7">Failed to load. Check connection.</td></tr>';
@@ -251,6 +257,53 @@
       document.getElementById('total-revenue').textContent = `₹${revenue.toLocaleString('en-IN')}`;
     }
 
+    function renderItemSales() {
+      const itemCounts = {};
+      
+      allOrders.forEach(order => {
+        // Items are stored as JSON in pos_orders
+        let items = [];
+        try {
+          items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+        } catch (e) {}
+
+        if (Array.isArray(items)) {
+          items.forEach(item => {
+            const name = item.name || '';
+            let group = name;
+
+            // Grouping Logic
+            if (name.toLowerCase().includes('momo') || 
+                name.toLowerCase().includes('tandoori fried') || 
+                name.toLowerCase().includes('chipotle fried')) {
+              group = 'All Momos';
+            } else if (name.toLowerCase().includes('veggies bag') || 
+                       name.toLowerCase().includes('byob') ||
+                       name.toLowerCase().includes('chips chaat')) {
+              group = 'All BYOB';
+            }
+
+            itemCounts[group] = (itemCounts[group] || 0) + (parseInt(item.qty) || 1);
+          });
+        }
+      });
+
+      const grid = document.getElementById('item-sales-grid');
+      const sorted = Object.entries(itemCounts).sort((a,b) => b[1] - a[1]);
+
+      if (sorted.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:20px;">No sales data</div>';
+        return;
+      }
+
+      grid.innerHTML = sorted.map(([name, qty]) => `
+        <div class="stat-card">
+          <div class="stat-value" style="font-size:1.6rem;">${qty}</div>
+          <div class="stat-label">${name}</div>
+        </div>
+      `).join('');
+    }
+
     async function changeStatus(id, newStatus) {
       try {
         await supabaseUpdate('pos_orders', id, { status: newStatus });
@@ -281,6 +334,7 @@
         allOrders = newData;
         renderTable();
         updateDashStats();
+        renderItemSales();
         if (hadNew) playNotificationSound();
       } catch (err) { /* retry */ }
     }
