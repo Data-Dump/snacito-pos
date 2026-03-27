@@ -155,8 +155,8 @@
         <div class="kitchen-stat-label">Preparing</div>
       </div>
       <div class="kitchen-stat">
-        <div class="kitchen-stat-val green" id="stat-ready">0</div>
-        <div class="kitchen-stat-label">Ready</div>
+        <div class="kitchen-stat-val green" id="stat-completed">0</div>
+        <div class="kitchen-stat-label">Completed</div>
       </div>
       <span class="pos-topbar-clock" id="clock" style="margin-left:12px;"></span>
       <nav class="pos-nav-links">
@@ -172,7 +172,7 @@
     <button class="kitchen-filter-btn active" data-filter="active">🔥 Active Orders</button>
     <button class="kitchen-filter-btn" data-filter="new">New</button>
     <button class="kitchen-filter-btn" data-filter="preparing">Preparing</button>
-    <button class="kitchen-filter-btn" data-filter="ready">Ready</button>
+    <button class="kitchen-filter-btn" data-filter="completed">Completed</button>
     <button class="kitchen-filter-btn" data-filter="all">All</button>
   </div>
 
@@ -263,9 +263,7 @@
         if (order.status === 'new') {
           html += `<button class="kitchen-action-btn start" onclick="updateStatus(${order.id}, 'preparing')">🔥 Start Preparing</button>`;
         } else if (order.status === 'preparing') {
-          html += `<button class="kitchen-action-btn done" onclick="updateStatus(${order.id}, 'ready')">✅ Mark Ready</button>`;
-        } else if (order.status === 'ready') {
-          html += `<button class="kitchen-action-btn finish" onclick="updateStatus(${order.id}, 'completed')">Done & Clear</button>`;
+          html += `<button class="kitchen-action-btn done" onclick="updateStatus(${order.id}, 'completed')">✅ Mark Ready & Complete</button>`;
         }
         html += `</div></div>`;
       });
@@ -279,7 +277,7 @@
       const all = [...orders.values()];
       document.getElementById('stat-new').textContent = all.filter(o => o.status === 'new').length;
       document.getElementById('stat-preparing').textContent = all.filter(o => o.status === 'preparing').length;
-      document.getElementById('stat-ready').textContent = all.filter(o => o.status === 'ready').length;
+      document.getElementById('stat-completed').textContent = all.filter(o => o.status === 'ready' || o.status === 'completed').length;
     }
 
     function updateTimers() {

@@ -626,8 +626,19 @@
         <h2 id="edit-title">New Order</h2>
         <button class="edit-panel-close" onclick="closeEditPanel()">✕</button>
       </div>
-      <div class="edit-panel-body" id="edit-body">
-        <!-- Menu + Cart rendered by JS -->
+      <div class="edit-panel-body">
+        <!-- New Custom Item Section -->
+        <div id="custom-item-section" style="padding-bottom: 16px; border-bottom: 2px solid var(--border-color); margin-bottom: 16px;">
+          <div class="edit-section-title" style="margin-top: 0; color: var(--success);">➕ Add Custom Item</div>
+          <div class="edit-customer-row" style="margin-bottom: 0; display: flex; gap: 8px;">
+            <input type="text" class="pos-input" id="custom-name" placeholder="Item Name" style="flex: 2;">
+            <input type="number" class="pos-input" id="custom-price" placeholder="Price (₹)" style="flex: 1;">
+            <button class="btn-primary" onclick="addCustomItem()" style="width: auto; padding: 0 16px; background: var(--success); white-space: nowrap;">Add</button>
+          </div>
+        </div>
+        <div id="edit-body">
+          <!-- Menu + Cart rendered by JS -->
+        </div>
       </div>
       <div class="edit-panel-footer" id="edit-footer">
         <div class="edit-customer-row">
@@ -882,6 +893,10 @@
       editingCardId = cardId;
       const card = allCards.find(c => c.id === cardId);
       if (!card) return;
+
+      // Clear custom section
+      document.getElementById('custom-name').value = '';
+      document.getElementById('custom-price').value = '';
 
       const overlay = document.getElementById('edit-overlay');
       const panel = document.getElementById('edit-panel');
@@ -1140,6 +1155,38 @@
         }
       }
       return null;
+    }
+
+    // ─── Custom Item Action ───
+    function addCustomItem() {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (!card) return;
+
+      const nameEl = document.getElementById('custom-name');
+      const priceEl = document.getElementById('custom-price');
+      const name = nameEl.value.trim();
+      const price = parseInt(priceEl.value);
+
+      if (!name || isNaN(price) || price < 0) {
+        showToast('Please enter a valid name and price', '⚠️');
+        return;
+      }
+
+      card.cart.push({
+        name: name,
+        price: price,
+        qty: 1,
+        flavour: null,
+        addons: []
+      });
+
+      // Clear inputs
+      nameEl.value = '';
+      priceEl.value = '';
+
+      if (card.status === 'draft') saveToLocalStorage();
+      renderEditBody();
+      showToast('Custom item added', '✅');
     }
 
     // ─── Addon modal for edit panel ───
