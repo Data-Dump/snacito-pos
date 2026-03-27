@@ -71,6 +71,7 @@
 
     .order-card.draft { border-color: var(--brand-gold); }
     .order-card.sent { border-color: var(--success); opacity: 0.85; }
+    .order-card.unpaid { border-color: var(--danger) !important; border-width: 2.5px; opacity: 1 !important; box-shadow: 0 0 15px rgba(231, 76, 60, 0.2); }
     .order-card.sent:hover { opacity: 1; }
 
     .order-card-header {
@@ -782,6 +783,11 @@
 
       // Sort: drafts first, then sent by newest
       const sorted = [...allCards].sort((a, b) => {
+        const aUp = a.paymentStatus === 'unpaid';
+        const bUp = b.paymentStatus === 'unpaid';
+        if (aUp && !bUp) return -1;
+        if (!aUp && bUp) return 1;
+
         if (a.status === 'draft' && b.status !== 'draft') return -1;
         if (a.status !== 'draft' && b.status === 'draft') return 1;
         return new Date(b.createdAt) - new Date(a.createdAt);
@@ -808,7 +814,8 @@
         const total = calcCardTotal(card);
         const timeStr = formatCardTime(card.createdAt);
 
-        html += `<div class="order-card ${isSent ? 'sent' : 'draft'}" onclick="openEditPanel('${card.id}')">`;
+        const isUnpaid = card.paymentStatus === 'unpaid';
+        html += `<div class="order-card ${isSent ? 'sent' : 'draft'} ${isUnpaid ? 'unpaid' : ''}" onclick="openEditPanel('${card.id}')">`;
 
         // Header
         html += `<div class="order-card-header">
