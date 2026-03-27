@@ -128,6 +128,7 @@ const MENU = {
           addons: [
             { name: 'Chipotle Sauce', price: 15 },
             { name: 'Tandoori Sauce', price: 15 },
+            { name: 'Chilli Garlic Sause', price: 15 },
             { name: 'Mayo', price: 15 },
             { name: 'Melted Cheese', price: 15 }
           ]
