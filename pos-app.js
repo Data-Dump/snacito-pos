@@ -86,31 +86,19 @@ const SUPABASE_KEY = 'sb_publishable_Wy7qNiMG3d_GXmes2-htUw_TKkFi611';
 const MENU = {
   categories: [
     {
-      id: 'chaat',
-      name: 'BYOB',
-      icon: '🍟',
+      id: 'momos',
+      name: 'MOMOS (8 pcs)',
+      icon: '🥟',
       items: [
-        {
-          id: 'chaat-bag',
-          name: 'BYOB',
-          sub: 'with Veggies (Pyaz & Tamatar)',
-          price: 39,
-          badge: null,
-          hasFlavours: true,
-          flavours: ['Blue Lays', 'OG Kurkure', 'Doritos'],
-          hasAddons: true,
-          addons: [
-            { name: 'Chipotle', price: 15 },
-            { name: 'Tandoori', price: 15 },
-            { name: 'Mayo', price: 15 },
-            { name: 'Melted Cheese', price: 15 }
-          ]
-        }
+        { id: 'momos-steam', name: 'Steam Momos', sub: '8 pcs', price: 59, badge: 'Recommended' },
+        { id: 'momos-fried', name: 'Fried Momos', sub: '8 pcs', price: 79, badge: null },
+        { id: 'momos-tandoori', name: 'Tandoori Fried', sub: '8 pcs', price: 99, badge: 'Premium' },
+        { id: 'momos-chipotle', name: 'Chipotle Fried', sub: '8 pcs', price: 99, badge: null }
       ]
     },
     {
       id: 'maggi',
-      name: 'Maggi',
+      name: 'MAGGI',
       icon: '🍜',
       items: [
         { id: 'maggi-classic', name: 'Classic Maggi', sub: '', price: 39, badge: null },
@@ -120,23 +108,39 @@ const MENU = {
       ]
     },
     {
-      id: 'momos',
-      name: 'Momos (8pc)',
-      icon: '🥟',
+      id: 'chaat',
+      name: 'BYOB (Chips Chaat Base)',
+      icon: '🍟',
       items: [
-        { id: 'momos-steam', name: 'Steam Momos', sub: '8 pcs', price: 59, badge: 'Recommended' },
-        { id: 'momos-fried', name: 'Fried Momos', sub: '8 pcs', price: 69, badge: null },
-        { id: 'momos-kurkure', name: 'Kurkure Momos', sub: '8 pcs', price: 79, badge: 'Recommended' },
-        { id: 'momos-chipotle', name: 'Chipotle Fried', sub: '8 pcs', price: 89, badge: null }
+        {
+          id: 'chaat-bag',
+          name: 'Base Veggies Bag',
+          sub: 'with Pyaz & Tamatar',
+          price: 39,
+          badge: 'MANDATORY MODIFIER',
+          hasFlavours: true,
+          flavours: [
+            { name: 'Blue Lays', price: 0 },
+            { name: 'OG Kurkure', price: 0 },
+            { name: 'Doritos', price: 10 }
+          ],
+          hasAddons: true,
+          addons: [
+            { name: 'Chipotle Sauce', price: 15 },
+            { name: 'Tandoori Sauce', price: 15 },
+            { name: 'Mayo', price: 15 },
+            { name: 'Melted Cheese', price: 15 }
+          ]
+        }
       ]
     },
     {
       id: 'drinks',
-      name: 'Drinks',
+      name: 'NIMBU PANI',
       icon: '🥤',
       items: [
-        { id: 'nimbu-pani', name: 'Nimbu Pani', sub: 'Chilled & Refreshing', price: 15, badge: null },
-        { id: 'nimbu-pani-soda', name: 'Nimbu Pani (Soda)', sub: 'Fizzy & Refreshing', price: 20, badge: null }
+        { id: 'nimbu-pani-soda', name: 'With Soda', sub: 'Fizzy & Refreshing', price: 20, badge: null },
+        { id: 'nimbu-pani', name: 'Without Soda', sub: 'Chilled & Refreshing', price: 15, badge: null }
       ]
     }
   ]

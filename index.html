@@ -343,11 +343,8 @@
     .edit-total-label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
     .edit-total-value { font-size: 1.5rem; font-weight: 900; color: var(--brand-gold); }
 
-    /* Sent order view-only */
-    .edit-panel.is-sent .edit-menu-grid { display: none; }
-    .edit-panel.is-sent .edit-section-title.add-section { display: none; }
-    .edit-panel.is-sent .edit-panel-footer .btn-primary { display: none; }
-    .edit-panel.is-sent .qty-controls .qty-btn { display: none; }
+    /* Sent order view-only (Modified to allow editing) */
+    .edit-panel.is-sent .edit-panel-footer .btn-primary#btn-send-order { display: none; }
 
     /* ─── Online Orders Card ─── */
     .online-orders-card {
@@ -649,6 +646,7 @@
         <a class="btn-primary" id="btn-send-wa" href="#" target="_blank" style="display:none; background:#25D366; text-align:center; text-decoration:none; color:#fff; font-size:0.82rem; padding:10px 16px; border-radius:10px;">📱 Send WhatsApp Confirmation</a>
         <div style="border-top:1px solid var(--border-color); margin:6px 0;"></div>
         <button class="btn-primary" id="btn-send-order" disabled>🔔 Send to Kitchen</button>
+        <button class="btn-primary" id="btn-update-order" style="display:none; background:var(--brand-gold);">💾 Update Order</button>
       </div>
     </div>
   </div>
@@ -847,8 +845,9 @@
       card.cart.forEach(entry => {
         const price = entry.menuItem?.price || entry.price || 0;
         const qty = entry.qty || 1;
+        const flavourPrice = (entry.flavour && typeof entry.flavour === 'object') ? (entry.flavour.price || 0) : 0;
         const addonTotal = (entry.addons || []).reduce((s, a) => s + (a.price || 0), 0);
-        total += (price + addonTotal) * qty;
+        total += (price + flavourPrice + addonTotal) * qty;
       });
       return total;
     }
@@ -876,8 +875,9 @@
       document.getElementById('edit-title').textContent = card.token + (isSent ? ' (Sent)' : '');
       document.getElementById('edit-customer').value = card.customerName || '';
       document.getElementById('edit-note').value = card.note || '';
-      document.getElementById('edit-customer').disabled = isSent;
-      document.getElementById('edit-note').disabled = isSent;
+      // Orders can be edited even if sent
+      document.getElementById('edit-customer').disabled = false;
+      document.getElementById('edit-note').disabled = false;
 
       // Load phone — from card.phone or extract from note
       let phone = card.phone || '';
@@ -886,7 +886,7 @@
         if (phoneMatch) phone = phoneMatch[1];
       }
       document.getElementById('edit-phone').value = phone;
-      document.getElementById('edit-phone').disabled = isSent;
+      document.getElementById('edit-phone').disabled = false;
 
       updateWaButton();
       renderEditBody();
@@ -897,15 +897,22 @@
       const card = allCards.find(c => c.id === editingCardId);
       if (!card) return;
       const sendBtn = document.getElementById('btn-send-order');
+      const updateBtn = document.getElementById('btn-update-order');
+
+      const name = document.getElementById('edit-customer').value.trim();
+      const phone = document.getElementById('edit-phone').value.trim();
+      const validPhone = phone === '0' || /^\d{10}$/.test(phone);
+      const validName = name.length > 0;
+      const hasItems = card.cart.length > 0;
+
       if (card.status === 'draft') {
-        const name = document.getElementById('edit-customer').value.trim();
-        const phone = document.getElementById('edit-phone').value.trim();
-        const validPhone = phone === '0' || /^\d{10}$/.test(phone);
-        const validName = name.length > 0;
-        sendBtn.disabled = card.cart.length === 0 || !validName || !validPhone;
+        sendBtn.disabled = !hasItems || !validName || !validPhone;
         sendBtn.style.display = '';
+        updateBtn.style.display = 'none';
       } else {
         sendBtn.style.display = 'none';
+        updateBtn.style.display = '';
+        updateBtn.disabled = !hasItems || !validName || !validPhone;
       }
     }
 
@@ -950,6 +957,10 @@
 
     // Update WA button live as phone is typed
     document.getElementById('edit-phone').addEventListener('input', () => {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (card) {
+        card.phone = document.getElementById('edit-phone').value.trim();
+      }
       updateWaButton();
       validateDraftEnable();
     });
@@ -997,9 +1008,9 @@
           const name = entry.menuItem?.name || entry.name || '?';
           const price = entry.menuItem?.price || entry.price || 0;
           const addonCost = (entry.addons || []).reduce((s, a) => s + (a.price || 0), 0);
-          const lineTotal = (price + addonCost) * (entry.qty || 1);
+          const lineTotal = (price + addonCost + (entry.flavour?.price || 0)) * (entry.qty || 1);
           let detail = '';
-          if (entry.flavour) detail += entry.flavour;
+          if (entry.flavour) detail += (typeof entry.flavour === 'object' ? entry.flavour.name : entry.flavour);
           if (entry.addons && entry.addons.length > 0) {
             if (detail) detail += ' · ';
             detail += entry.addons.map(a => a.name).join(', ');
@@ -1024,8 +1035,8 @@
         });
       }
 
-      // Menu (only for drafts)
-      if (!isSent) {
+      // Menu (Available for both drafts AND sent orders now)
+      if (true) {
         MENU.categories.forEach(cat => {
           html += `<div class="edit-section-title add-section">${cat.icon} ${cat.name}</div>`;
           html += `<div class="edit-menu-grid">`;
@@ -1063,7 +1074,7 @@
 
     function editAddItem(itemId) {
       const card = allCards.find(c => c.id === editingCardId);
-      if (!card || card.status === 'sent') return;
+      if (!card) return;
 
       const item = findMenuItem(itemId);
       if (!item) return;
@@ -1084,7 +1095,7 @@
 
     function editChangeQty(idx, delta) {
       const card = allCards.find(c => c.id === editingCardId);
-      if (!card || card.status === 'sent') return;
+      if (!card) return;
 
       card.cart[idx].qty = (card.cart[idx].qty || 1) + delta;
       if (card.cart[idx].qty <= 0) card.cart.splice(idx, 1);
@@ -1109,10 +1120,12 @@
 
       let html = '';
       if (item.hasFlavours && item.flavours) {
-        html += `<div class="chip-label">Choose Flavour</div><div class="chip-group">`;
+        html += `<div class="chip-label">Choose Flavour (MANDATORY)</div><div class="chip-group">`;
         item.flavours.forEach((f, i) => {
+          const fName = typeof f === 'object' ? f.name : f;
+          const fPrice = typeof f === 'object' ? f.price : 0;
           html += `<label class="chip ${i === 0 ? 'selected' : ''}" onclick="toggleRadioChip(this)">
-            <input type="radio" name="modal-flavour" value="${f}" ${i === 0 ? 'checked' : ''}><span>${f}</span>
+            <input type="radio" name="modal-flavour" value="${fName}" data-price="${fPrice}" ${i === 0 ? 'checked' : ''}><span>${fName} ${fPrice > 0 ? `+₹${fPrice}` : ''}</span>
           </label>`;
         });
         html += `</div>`;
@@ -1135,7 +1148,7 @@
         if (!card) return;
 
         const flavourEl = body.querySelector('input[name="modal-flavour"]:checked');
-        const flavour = flavourEl ? flavourEl.value : null;
+        const flavour = flavourEl ? { name: flavourEl.value, price: parseInt(flavourEl.dataset.price) || 0 } : null;
         const addons = [];
         body.querySelectorAll('input[name="modal-addon"]:checked').forEach(cb => {
           addons.push({ name: cb.value, price: parseInt(cb.dataset.price) });
@@ -1181,13 +1194,17 @@
       btn.disabled = true;
       btn.textContent = '⏳ Sending...';
 
-      const items = card.cart.map(entry => ({
-        name: entry.menuItem?.name || entry.name,
-        qty: entry.qty || 1,
-        price: entry.menuItem?.price || entry.price || 0,
-        flavour: entry.flavour || null,
-        addons: entry.addons || []
-      }));
+      const items = card.cart.map(entry => {
+        const basePrice = entry.menuItem?.price || entry.price || 0;
+        const flavourPrice = (entry.flavour && typeof entry.flavour === 'object') ? (entry.flavour.price || 0) : 0;
+        return {
+          name: entry.menuItem?.name || entry.name,
+          qty: entry.qty || 1,
+          price: basePrice + flavourPrice,
+          flavour: entry.flavour?.name || (typeof entry.flavour === 'string' ? entry.flavour : null),
+          addons: entry.addons || []
+        };
+      });
 
       const total = calcCardTotal(card);
 
@@ -1222,13 +1239,68 @@
       btn.textContent = '🔔 Send to Kitchen';
     });
 
-    // Customer name live-save
+    document.getElementById('btn-update-order').addEventListener('click', async () => {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (!card || card.status !== 'sent' || !card.dbId) return;
+
+      const btn = document.getElementById('btn-update-order');
+      btn.disabled = true;
+      btn.textContent = '⏳ Updating...';
+
+      // Sync latest values from inputs
+      card.customerName = document.getElementById('edit-customer').value.trim();
+      card.note = document.getElementById('edit-note').value.trim();
+      card.phone = document.getElementById('edit-phone').value.trim();
+      card.total = calcCardTotal(card);
+
+      const items = card.cart.map(entry => {
+        const basePrice = entry.menuItem?.price || entry.price || 0;
+        const flavourPrice = (entry.flavour && typeof entry.flavour === 'object') ? (entry.flavour.price || 0) : 0;
+        return {
+          name: entry.menuItem?.name || entry.name,
+          qty: entry.qty || 1,
+          price: basePrice + flavourPrice,
+          flavour: entry.flavour?.name || (typeof entry.flavour === 'string' ? entry.flavour : null),
+          addons: entry.addons || []
+        };
+      });
+
+      try {
+        await supabaseUpdate('pos_orders', card.dbId, {
+          items: items,
+          customer_name: card.customerName,
+          note: card.note + (card.phone ? ' | Phone: ' + card.phone : ''),
+          total: card.total
+        });
+
+        showToast(`Order ${card.token} updated!`, '💾');
+        renderGrid();
+        validateDraftEnable(); // Update button state
+      } catch (err) {
+        console.error('Failed to update order:', err);
+        showToast('Failed to update. Check connection.', '❌');
+      }
+
+      btn.disabled = false;
+      btn.textContent = '💾 Update Order';
+    });
+
+    // Customer name live-save (Updated to handle both status)
     document.getElementById('edit-customer').addEventListener('input', () => {
       const card = allCards.find(c => c.id === editingCardId);
-      if (card && card.status === 'draft') {
+      if (card) {
         card.customerName = document.getElementById('edit-customer').value.trim();
+        validateDraftEnable();
       }
-      validateDraftEnable();
+    });
+
+    // Note live-save
+    document.getElementById('edit-note').addEventListener('input', () => {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (card) {
+        card.note = document.getElementById('edit-note').value.trim();
+        validateDraftEnable();
+      }
     });
 
     // ═══════════════════════════════════════════
