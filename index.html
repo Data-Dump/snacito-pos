@@ -850,7 +850,6 @@
     }
 
     function calcCardTotal(card) {
-      if (card.total && card.status === 'sent') return card.total;
       let total = 0;
       card.cart.forEach(entry => {
         const price = entry.menuItem?.price || entry.price || 0;
