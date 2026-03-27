@@ -216,6 +216,13 @@
         if (dashFilter === 'all') return true;
         if (dashFilter === 'unpaid') return o.payment_status === 'unpaid';
         return o.status === dashFilter;
+      }).sort((a, b) => {
+        // Priority: Unpaid first, then by token/ID (token is text, so maybe created_at)
+        const aUnpaid = a.payment_status === 'unpaid';
+        const bUnpaid = b.payment_status === 'unpaid';
+        if (aUnpaid && !bUnpaid) return -1;
+        if (!aUnpaid && bUnpaid) return 1;
+        return new Date(b.created_at) - new Date(a.created_at);
       });
 
       if (filtered.length === 0) {

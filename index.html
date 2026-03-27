@@ -1322,6 +1322,7 @@
       if (card) card.paymentStatus = e.target.checked ? 'paid' : 'unpaid';
       updatePaidLabel();
       validateDraftEnable();
+      renderGrid(); // Refresh grid to update sorting and colors
     });
 
     function updatePaidLabel() {
