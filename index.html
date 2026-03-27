@@ -1021,15 +1021,12 @@
               <div class="eci-name">${name}</div>
               ${detail ? `<div class="eci-detail">${detail}</div>` : ''}
             </div>`;
-          if (!isSent) {
-            html += `<div class="qty-controls">
-              <button class="qty-btn ${(entry.qty || 1) <= 1 ? 'remove' : ''}" onclick="editChangeQty(${idx}, -1)">${(entry.qty || 1) <= 1 ? '✕' : '−'}</button>
-              <span class="qty-val">${entry.qty || 1}</span>
-              <button class="qty-btn" onclick="editChangeQty(${idx}, 1)">+</button>
-            </div>`;
-          } else {
-            html += `<span class="qty-val" style="margin-right:8px;">×${entry.qty || 1}</span>`;
-          }
+          html += `<div class="qty-controls">
+            <button class="qty-btn" onclick="editChangeQty(${idx}, -1)">−</button>
+            <span class="qty-val">${entry.qty || 1}</span>
+            <button class="qty-btn" onclick="editChangeQty(${idx}, 1)">+</button>
+            <button class="qty-btn remove" onclick="editDeleteItem(${idx})" style="margin-left: 8px;">✕</button>
+          </div>`;
           html += `<div class="eci-price">₹${lineTotal}</div>
           </div>`;
         });
@@ -1099,7 +1096,18 @@
 
       card.cart[idx].qty = (card.cart[idx].qty || 1) + delta;
       if (card.cart[idx].qty <= 0) card.cart.splice(idx, 1);
-      saveToLocalStorage();
+
+      if (card.status === 'draft') saveToLocalStorage();
+      renderEditBody();
+    }
+
+    function editDeleteItem(idx) {
+      if (!confirm('Are you sure you want to remove this item?')) return;
+      const card = allCards.find(c => c.id === editingCardId);
+      if (!card) return;
+
+      card.cart.splice(idx, 1);
+      if (card.status === 'draft') saveToLocalStorage();
       renderEditBody();
     }
 
