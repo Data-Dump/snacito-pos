@@ -264,6 +264,7 @@
         } else {
           html += `<span style="font-size:0.7rem; color:var(--text-muted);">—</span>`;
         }
+        html += `<button class="status-action-btn" style="background:var(--danger); border-color:var(--danger); margin-left:8px;" onclick="confirmDeleteOrder(${order.id}, '${order.token}')">Delete</button>`;
         html += `</div></td></tr>`;
       });
 
@@ -368,6 +369,22 @@
       } catch (err) {
         console.error('Status update failed:', err);
         showToast('Failed to update', '❌');
+      }
+    }
+
+    async function confirmDeleteOrder(id, token) {
+      if (!confirm(`Are you sure you want to DELETE order ${token}?\nThis cannot be undone.`)) return;
+
+      try {
+        await supabaseDelete('pos_orders', id);
+        allOrders = allOrders.filter(o => o.id !== id);
+        renderTable();
+        updateDashStats();
+        renderItemSales();
+        showToast(`Order ${token} deleted`, '🗑️');
+      } catch (err) {
+        console.error('Deletion failed:', err);
+        showToast('Failed to delete order', '❌');
       }
     }
 

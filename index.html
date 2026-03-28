@@ -667,6 +667,7 @@
         <div style="border-top:1px solid var(--border-color); margin:6px 0;"></div>
         <button class="btn-primary" id="btn-send-order" disabled>🔔 Send to Kitchen</button>
         <button class="btn-primary" id="btn-update-order" style="display:none; background:var(--brand-gold);">💾 Update Order</button>
+        <button class="btn-primary" id="btn-delete-order" style="margin-top:12px; background:var(--danger); border-color:var(--danger);" onclick="deleteOrder()">🗑️ Delete Order</button>
       </div>
     </div>
   </div>
@@ -1363,6 +1364,45 @@
       btn.disabled = false;
       btn.textContent = '💾 Update Order';
     });
+
+    async function deleteOrder() {
+      const cardId = editingCardId;
+      if (!cardId) return;
+
+      const card = allCards.find(c => c.id === cardId);
+      if (!card) return;
+
+      if (!confirm(`Are you sure you want to DELETE order ${card.token}?\nThis action cannot be undone.`)) return;
+
+      const btn = document.getElementById('btn-delete-order');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '⏳ Deleting...';
+
+      try {
+        if (card.status === 'sent' && card.dbId) {
+          await supabaseDelete('pos_orders', card.dbId);
+          showToast(`Order ${card.token} deleted from database`, '🗑️');
+        } else {
+          showToast(`Draft ${card.token} discarded`, '🗑️');
+        }
+
+        // Remove from allCards
+        allCards = allCards.filter(c => c.id !== cardId);
+        
+        // If it was a draft, update localStorage
+        if (card.status === 'draft') {
+          saveToLocalStorage();
+        }
+
+        closeEditPanel();
+      } catch (err) {
+        console.error('Failed to delete order:', err);
+        showToast('Failed to delete. Check connection.', '❌');
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }
 
     document.getElementById('edit-paid').addEventListener('change', e => {
       const card = allCards.find(c => c.id === editingCardId);

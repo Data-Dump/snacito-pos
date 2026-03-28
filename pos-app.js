@@ -220,6 +220,15 @@ async function supabaseUpdate(table, id, data) {
   return res.json();
 }
 
+async function supabaseDelete(table, id) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: 'DELETE',
+    headers: supabaseHeaders
+  });
+  if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
+  return true;
+}
+
 // ─── Supabase Realtime (SSE-based via PostgREST) ───
 // Using Supabase Realtime via WebSocket
 
