@@ -481,6 +481,24 @@
       }
     }
 
+    async function showUnpaidAlert(customer, total) {
+      if (!confirm(`Mark order for ${customer || 'Walk-in'} (Total: ₹${total}) as PAID?`)) return;
+      
+      const order = allOrders.find(o => (o.customer_name === customer || (!o.customer_name && customer === 'Walk-in')) && o.total === total && o.payment_status === 'unpaid');
+      if (!order) return;
+
+      try {
+        await supabaseUpdate('pos_orders', order.id, { payment_status: 'paid' });
+        order.payment_status = 'paid';
+        renderTable();
+        updateDashStats();
+        showToast('Order marked as PAID', '💰');
+      } catch (err) {
+        console.error('Update failed:', err);
+        showToast('Failed to update status', '❌');
+      }
+    }
+
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));

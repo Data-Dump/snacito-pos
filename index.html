@@ -712,6 +712,7 @@
 
     let allCards = []; // { id, token, cart[], customerName, note, status:'draft'|'sent', total, createdAt, sentAt }
     let editingCardId = null;
+    let editingOriginalCartString = '';
     let cardCounter = parseInt(localStorage.getItem('snk_card_counter') || '0');
 
     function saveToLocalStorage() {
@@ -931,6 +932,9 @@
       // Payment status
       document.getElementById('edit-paid').checked = card.paymentStatus !== 'unpaid';
       updatePaidLabel();
+
+      // Store original cart for comparison (to avoid unnecessary kitchen resets)
+      editingOriginalCartString = JSON.stringify(card.cart);
 
       updateWaButton();
       renderEditBody();
@@ -1350,18 +1354,31 @@
         };
       });
 
-      try {
-        await supabaseUpdate('pos_orders', card.dbId, {
-          items: items,
-          customer_name: card.customerName,
-          note: card.note + (card.phone ? ' | Phone: ' + card.phone : ''),
-          total: card.total,
-          payment_status: card.paymentStatus || 'paid',
-          status: 'new' // Send back to kitchen
-        });
+      const currentCartString = JSON.stringify(card.cart);
+      const itemsChanged = currentCartString !== editingOriginalCartString;
 
-        card.dbStatus = 'new'; // Update local state
-        showToast(`Order ${card.token} updated and sent to kitchen!`, '💾');
+      const updateData = {
+        items: items,
+        customer_name: card.customerName,
+        note: card.note + (card.phone ? ' | Phone: ' + card.phone : ''),
+        total: card.total,
+        payment_status: card.paymentStatus || 'paid'
+      };
+
+      // ONLY set status to 'new' if the items actually changed
+      if (itemsChanged) {
+        updateData.status = 'new';
+      }
+
+      try {
+        await supabaseUpdate('pos_orders', card.dbId, updateData);
+
+        if (itemsChanged) {
+          card.dbStatus = 'new'; // Update local state
+          showToast(`Order ${card.token} items updated and re-sent!`, '💾');
+        } else {
+          showToast(`Order ${card.token} details updated`, '✅');
+        }
         renderGrid();
         validateDraftEnable(); // Update button state
       } catch (err) {
