@@ -423,6 +423,42 @@
     .edit-total-label { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; }
     .edit-total-value { font-size: 1.8rem; font-weight: 900; color: var(--brand-gold); }
 
+    /* Received amount & balance section */
+    .received-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .received-input-row {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--bg-surface);
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      transition: 0.2s;
+    }
+    .received-input-row:focus-within { border-color: var(--brand-gold); }
+    .received-input-row span { padding: 0 10px; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
+    .received-input-row input { flex: 1; background: transparent; border: none; color: var(--text-primary); font-size: 1rem; font-weight: 700; padding: 8px 8px; outline: none; font-family: inherit; }
+    .balance-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: 0.2s;
+    }
+    .balance-row.paid-up { background: rgba(46,204,113,0.12); border: 1px solid var(--success); }
+    .balance-row.has-balance { background: rgba(231,76,60,0.1); border: 1px solid var(--danger); }
+    .balance-row .bal-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+    .balance-row.paid-up .bal-label { color: var(--success); }
+    .balance-row.has-balance .bal-label { color: var(--danger); }
+    .balance-row .bal-amount { font-size: 1.1rem; font-weight: 900; }
+    .balance-row.paid-up .bal-amount { color: var(--success); }
+    .balance-row.has-balance .bal-amount { color: var(--danger); }
+
     .bulk-paid-btn {
       padding: 10px;
       width: 100%;
@@ -744,18 +780,20 @@
               </div>
             </div>
           </div>
-          <div style="width:300px; display:flex; flex-direction:column; justify-content:center; border-left:1px solid var(--border-color); padding-left:20px;">
-            <div class="edit-customer-row" style="margin-bottom:12px; align-items:center; gap:12px;">
-              <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">Global:</span>
-              <label class="pos-toggle">
-                <input type="checkbox" id="edit-paid" checked onchange="toggleGlobalPaid(this.checked)">
-                <span class="pos-toggle-slider"></span>
-              </label>
-              <span id="edit-paid-label" style="font-size:0.85rem; font-weight:800; color:var(--success);">PAID</span>
-            </div>
-            <div class="edit-total-row">
-              <span class="edit-total-label">Total</span>
+          <div style="width:320px; display:flex; flex-direction:column; justify-content:center; gap:10px; border-left:1px solid var(--border-color); padding-left:20px;">
+            <div class="edit-total-row" style="margin:0;">
+              <span class="edit-total-label">Order Total</span>
               <span class="edit-total-value" id="edit-total">₹0</span>
+            </div>
+            <div class="received-section">
+              <div class="received-input-row">
+                <span>Received ₹</span>
+                <input type="number" id="edit-received" placeholder="0" min="0" oninput="updateBalanceDisplay()">
+              </div>
+              <div class="balance-row has-balance" id="balance-row">
+                <span class="bal-label">Balance Due</span>
+                <span class="bal-amount" id="balance-amount">₹0</span>
+              </div>
             </div>
           </div>
         </div>
@@ -828,6 +866,12 @@
       } catch (e) { }
     }
 
+    function calcBalance(card) {
+      const total = calcCardTotal(card);
+      const received = card.receivedAmount || 0;
+      return Math.max(0, total - received);
+    }
+
     async function loadSentOrders() {
       try {
         const data = await supabaseSelect('pos_orders', 'select=*');
@@ -835,7 +879,7 @@
           let card = allCards.find(c => c.token === order.token && c.status === 'sent');
           if (card) {
             card.dbStatus = order.status;
-            card.paymentStatus = order.payment_status || 'paid';
+            card.receivedAmount = order.received_amount || 0;
             return;
           }
           const items = order.items || [];
@@ -850,9 +894,10 @@
             })),
             customerName: order.customer_name,
             note: order.note,
+            phone: '',
             status: 'sent',
             dbStatus: order.status,
-            paymentStatus: order.payment_status || 'paid',
+            receivedAmount: order.received_amount || 0,
             total: order.total,
             createdAt: order.created_at,
             sentAt: order.created_at
@@ -891,10 +936,10 @@
         </div>`;
 
       const sorted = [...allCards].sort((a, b) => {
-        const aUnpaid = a.status === 'sent' && a.paymentStatus === 'unpaid';
-        const bUnpaid = b.status === 'sent' && b.paymentStatus === 'unpaid';
-        if (aUnpaid && !bUnpaid) return -1;
-        if (!aUnpaid && bUnpaid) return 1;
+        const aHasBalance = calcBalance(a) > 0;
+        const bHasBalance = calcBalance(b) > 0;
+        if (aHasBalance && !bHasBalance) return -1;
+        if (!aHasBalance && bHasBalance) return 1;
         if (a.status === 'draft' && b.status === 'sent') return -1;
         if (a.status === 'sent' && b.status === 'draft') return 1;
         return new Date(b.createdAt) - new Date(a.createdAt);
@@ -902,9 +947,10 @@
 
       sorted.forEach(card => {
         const total = calcCardTotal(card);
-        const isUnpaid = card.status === 'sent' && card.paymentStatus === 'unpaid';
+        const balance = calcBalance(card);
+        const hasBalance = balance > 0;
         html += `
-          <div class="order-card ${card.status} ${isUnpaid ? 'unpaid' : ''}" onclick="openEditPanel('${card.id}')">
+          <div class="order-card ${card.status} ${hasBalance ? 'unpaid' : ''}" onclick="openEditPanel('${card.id}')">
             <div class="order-card-header">
               <div>
                 <div class="order-card-token">${card.token}</div>
@@ -928,7 +974,10 @@
         html += `</div>
             <div class="order-card-footer">
               <div class="order-card-total">₹${total}</div>
-              <div class="order-card-time">${card.createdAt ? new Date(card.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</div>
+              <div style="text-align:right;">
+                ${balance > 0 ? `<div style="font-size:0.6rem; font-weight:700; color:var(--danger); letter-spacing:0.5px;">DUE ₹${balance}</div>` : (card.status==='sent'&&card.receivedAmount>0 ? `<div style="font-size:0.6rem; font-weight:700; color:var(--success); letter-spacing:0.5px;">PAID ✓</div>` : '')}
+                <div class="order-card-time">${card.createdAt ? new Date(card.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</div>
+              </div>
             </div>
           </div>`;
       });
@@ -960,9 +1009,9 @@
       document.getElementById('edit-customer').value = card.customerName || '';
       document.getElementById('edit-note').value = card.note || '';
       document.getElementById('edit-phone').value = card.phone || '';
-      document.getElementById('edit-paid').checked = (card.paymentStatus !== 'unpaid');
-      updatePaidLabel();
+      document.getElementById('edit-received').value = card.receivedAmount > 0 ? card.receivedAmount : '';
       renderEditBody();
+      updateBalanceDisplay();
       document.getElementById('edit-overlay').classList.add('show');
       validateDraftEnable();
       updateWaButton();
@@ -974,8 +1023,11 @@
         card.customerName = document.getElementById('edit-customer').value.trim();
         card.note = document.getElementById('edit-note').value.trim();
         card.phone = document.getElementById('edit-phone').value.trim();
+        card.receivedAmount = parseFloat(document.getElementById('edit-received').value) || 0;
         if (card.cart.length === 0) allCards = allCards.filter(c => c.id !== card.id);
         saveToLocalStorage();
+      } else if (card && card.status === 'sent') {
+        card.receivedAmount = parseFloat(document.getElementById('edit-received').value) || 0;
       }
       editingCardId = null;
       document.getElementById('edit-overlay').classList.remove('show');
@@ -1094,18 +1146,26 @@
 
     function updateEditTotal() {
       const card = allCards.find(c => c.id === editingCardId);
-      if (card) { document.getElementById('edit-total').textContent = `₹${calcCardTotal(card)}`; validateDraftEnable(); }
+      if (card) { document.getElementById('edit-total').textContent = `₹${calcCardTotal(card)}`; validateDraftEnable(); updateBalanceDisplay(); }
     }
 
-    function updatePaidLabel() {
-      const isPaid = document.getElementById('edit-paid').checked;
-      const lbl = document.getElementById('edit-paid-label');
-      if (lbl) { lbl.textContent = isPaid ? 'PAID' : 'NOT PAID'; lbl.style.color = isPaid ? 'var(--success)' : 'var(--danger)'; }
-    }
-
-    function toggleGlobalPaid(isPaid) {
-      const card = allCards.find(c => c.id === editingCardId);
-      if (card) { card.paymentStatus = isPaid ? 'paid' : 'unpaid'; if (isPaid) card.cart.forEach(i => i.paid = true); updatePaidLabel(); renderEditBody(); }
+    function updateBalanceDisplay() {
+      const card = allCards.find(c => c.id === editingCardId); if (!card) return;
+      const total = calcCardTotal(card);
+      const received = parseFloat(document.getElementById('edit-received').value) || 0;
+      const balance = Math.max(0, total - received);
+      const row = document.getElementById('balance-row');
+      const amt = document.getElementById('balance-amount');
+      if (!row || !amt) return;
+      if (balance <= 0) {
+        row.className = 'balance-row paid-up';
+        row.querySelector('.bal-label').textContent = '✓ Fully Paid';
+        amt.textContent = `₹${received > total ? '+' + (received - total) : 0}`;
+      } else {
+        row.className = 'balance-row has-balance';
+        row.querySelector('.bal-label').textContent = 'Balance Due';
+        amt.textContent = `₹${balance}`;
+      }
     }
 
     function validateDraftEnable() {
@@ -1143,7 +1203,7 @@
       const card = allCards.find(c => c.id === editingCardId); if (!card) return;
       const n = document.getElementById('custom-name').value.trim(), p = parseInt(document.getElementById('custom-price').value);
       if (!n || isNaN(p)) return;
-      card.cart.push({ name: n, price: p, qty: 1, flavour: null, addons: [], paid: card.paymentStatus !== 'unpaid' });
+      card.cart.push({ name: n, price: p, qty: 1, flavour: null, addons: [] });
       document.getElementById('custom-name').value = ''; document.getElementById('custom-price').value = '';
       if (card.status === 'draft') saveToLocalStorage(); renderEditBody();
     }
@@ -1179,9 +1239,12 @@
     document.getElementById('btn-send-order').addEventListener('click', async () => {
       const card = allCards.find(c => c.id === editingCardId); if (!card) return;
       const btn = document.getElementById('btn-send-order'); btn.disabled = true; btn.textContent = '...';
-      const items = card.cart.map(e => ({ name: e.menuItem?.name || e.name, qty: e.qty, price: (e.menuItem?.price || e.price || 0) + (e.flavour?.price || 0), flavour: e.flavour?.name || e.flavour, addons: e.addons, paid: e.paid !== false }));
+      const received = parseFloat(document.getElementById('edit-received').value) || 0;
+      card.receivedAmount = received;
+      const items = card.cart.map(e => ({ name: e.menuItem?.name || e.name, qty: e.qty, price: (e.menuItem?.price || e.price || 0) + (e.flavour?.price || 0), flavour: e.flavour?.name || e.flavour, addons: e.addons || [] }));
+      const total = calcCardTotal(card);
       try {
-        const res = await supabaseInsert('pos_orders', { token: card.token, items, customer_name: document.getElementById('edit-customer').value, note: document.getElementById('edit-note').value + (document.getElementById('edit-phone').value ? ' | Phone: ' + document.getElementById('edit-phone').value : ''), status: 'new', total: calcCardTotal(card), payment_status: card.paymentStatus });
+        const res = await supabaseInsert('pos_orders', { token: card.token, items, customer_name: document.getElementById('edit-customer').value, note: document.getElementById('edit-note').value + (document.getElementById('edit-phone').value ? ' | Phone: ' + document.getElementById('edit-phone').value : ''), status: 'new', total, received_amount: received, payment_status: received >= total ? 'paid' : 'unpaid' });
         card.status = 'sent'; if (res?.id) card.dbId = res.id; saveToLocalStorage(); showToast('Sent!', '🔔'); closeEditPanel();
       } catch (e) { showToast('Error', '❌'); }
       btn.disabled = false; btn.textContent = '🔔 Send to Kitchen';
@@ -1190,9 +1253,12 @@
     document.getElementById('btn-update-order').addEventListener('click', async () => {
       const card = allCards.find(c => c.id === editingCardId); if (!card) return;
       const btn = document.getElementById('btn-update-order'); btn.disabled = true;
-      const items = card.cart.map(e => ({ name: e.menuItem?.name || e.name, qty: e.qty, price: (e.menuItem?.price || e.price || 0) + (e.flavour?.price || 0), flavour: e.flavour?.name || e.flavour, addons: e.addons, paid: e.paid !== false }));
+      const received = parseFloat(document.getElementById('edit-received').value) || 0;
+      card.receivedAmount = received;
+      const items = card.cart.map(e => ({ name: e.menuItem?.name || e.name, qty: e.qty, price: (e.menuItem?.price || e.price || 0) + (e.flavour?.price || 0), flavour: e.flavour?.name || e.flavour, addons: e.addons || [] }));
+      const total = calcCardTotal(card);
       try {
-        await supabaseUpdate('pos_orders', card.dbId, { items, customer_name: document.getElementById('edit-customer').value, note: document.getElementById('edit-note').value + (document.getElementById('edit-phone').value ? ' | Phone: ' + document.getElementById('edit-phone').value : ''), total: calcCardTotal(card), payment_status: card.paymentStatus, status: 'new' });
+        await supabaseUpdate('pos_orders', card.dbId, { items, customer_name: document.getElementById('edit-customer').value, note: document.getElementById('edit-note').value + (document.getElementById('edit-phone').value ? ' | Phone: ' + document.getElementById('edit-phone').value : ''), total, received_amount: received, payment_status: received >= total ? 'paid' : 'unpaid', status: 'new' });
         showToast('Updated!', '💾'); renderGrid(); closeEditPanel();
       } catch (e) { }
       btn.disabled = false;
@@ -1209,6 +1275,11 @@
     document.getElementById('edit-phone').addEventListener('input', () => {
       const card = allCards.find(c => c.id === editingCardId); if (card) card.phone = document.getElementById('edit-phone').value.trim();
       updateWaButton(); validateDraftEnable();
+    });
+    document.getElementById('edit-received').addEventListener('input', () => {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (card) card.receivedAmount = parseFloat(document.getElementById('edit-received').value) || 0;
+      updateBalanceDisplay();
     });
 
     function updateWaButton() {
