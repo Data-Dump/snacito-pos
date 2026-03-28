@@ -149,6 +149,19 @@
       text-transform: uppercase;
       animation: pulse 1s infinite;
     }
+
+    .kitchen-order-item.item-updated-highlight {
+      background: rgba(212, 160, 23, 0.15); /* Subtle gold background */
+      border-left: 3px solid var(--brand-gold);
+      padding-left: 8px;
+      margin-left: -11px; /* Align back with border-left offset */
+      animation: flash-item-gold 2s ease forwards;
+    }
+
+    @keyframes flash-item-gold {
+      0% { background: rgba(212, 160, 23, 0.4); }
+      100% { background: rgba(212, 160, 23, 0.15); }
+    }
   </style>
 </head>
 <body>
@@ -209,6 +222,11 @@
       return entries;
     }
 
+    function getItemKey(item) {
+      const addons = Array.isArray(item.addons) ? item.addons.map(a => a.name).sort().join(',') : '';
+      return `${item.name}|${item.flavour || ''}|${addons}|${item.qty}`;
+    }
+
     function renderKitchen(forceNewIds, forceUpdatedIds) {
       const grid = document.getElementById('kitchen-grid');
       const filtered = [...orders.values()].filter(o => {
@@ -255,7 +273,10 @@
         html += `<div class="kitchen-order-body">`;
         if (Array.isArray(items)) {
           items.forEach(item => {
-            html += `<div class="kitchen-order-item">
+            const itemKey = getItemKey(item);
+            const isItemEdited = order.editedItemKeys && order.editedItemKeys.includes(itemKey);
+            
+            html += `<div class="kitchen-order-item${isItemEdited ? ' item-updated-highlight' : ''}">
               <div>
                 <div class="kitchen-item-name">${item.name}</div>`;
             if (item.flavour) html += `<div class="kitchen-item-addons">Flavour: ${item.flavour}</div>`;
@@ -350,14 +371,28 @@
             knownIds.add(order.id);
             hasChanges = true;
           } else {
-            const oldItemsStr = typeof existing.items === 'string' ? existing.items : JSON.stringify(existing.items);
-            const newItemsStr = typeof order.items === 'string' ? order.items : JSON.stringify(order.items);
-            const itemsChanged = oldItemsStr !== newItemsStr;
+            const oldItems = typeof existing.items === 'string' ? JSON.parse(existing.items) : existing.items;
+            const newItems = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+            const itemsChanged = JSON.stringify(oldItems) !== JSON.stringify(newItems);
+            
             const statusChanged = existing.status !== order.status;
             const otherChanged = existing.note !== order.note || existing.customer_name !== order.customer_name;
+            
             if (itemsChanged || statusChanged || otherChanged) {
+              if (itemsChanged && Array.isArray(oldItems) && Array.isArray(newItems)) {
+                // Determine exactly which item lines changed
+                const oldKeys = new Set(oldItems.map(getItemKey));
+                order.editedItemKeys = newItems
+                  .map(getItemKey)
+                  .filter(key => !oldKeys.has(key));
+              } else if (existing.editedItemKeys) {
+                // Persist edited flag if only other things changed (optional, but keep for consistency)
+                order.editedItemKeys = existing.editedItemKeys;
+              }
+
               orders.set(order.id, order);
-              if (itemsChanged || otherChanged) changedIds.add(order.id);
+              // ALERT ONLY if items changed (not name, phone, or note)
+              if (itemsChanged) changedIds.add(order.id);
               hasChanges = true;
             }
           }
