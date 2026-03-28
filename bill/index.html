@@ -346,11 +346,11 @@
           <div class="summary-table">
             <div class="summary-row">
               <span style="color:#888;">Subtotal</span>
-              <span>₹${order.total}</span>
+              <span>₹${(order.total || 0) + (order.discount || 0)}</span>
             </div>
-            <div class="summary-row">
-              <span style="color:#888;">Processing Fee</span>
-              <span>₹0</span>
+            <div class="summary-row" style="color: #e74c3c; display: ${(order.discount || 0) > 0 ? 'flex' : 'none'};">
+              <span>Discount</span>
+              <span>-₹${order.discount || 0}</span>
             </div>
             <div class="summary-row grand-total">
               <span>Grand Total</span>

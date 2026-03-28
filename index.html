@@ -658,6 +658,11 @@
             <span class="pos-toggle-slider"></span>
           </label>
           <span id="edit-paid-label" style="font-size:0.85rem; font-weight:800; color:var(--success);">PAID</span>
+          <div style="flex:1;"></div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:0.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Discount:</span>
+            <input type="number" class="pos-input" id="edit-discount" placeholder="₹0" style="width:70px; padding:6px 10px; font-size:0.85rem; text-align:center;">
+          </div>
         </div>
         <div class="edit-total-row">
           <span class="edit-total-label">Total</span>
@@ -711,7 +716,7 @@
     //  Sent orders loaded from Supabase
     // ═══════════════════════════════════════════
 
-    let allCards = []; // { id, token, cart[], customerName, note, status:'draft'|'sent', total, createdAt, sentAt }
+    let allCards = []; // { id, token, cart[], customerName, note, status:'draft'|'sent', total, createdAt, sentAt, discount }
     let editingCardId = null;
     let editingOriginalCartString = '';
     let cardCounter = parseInt(localStorage.getItem('snk_card_counter') || '0');
@@ -758,7 +763,8 @@
             createdAt: order.created_at,
             sentAt: order.created_at,
             dbId: order.id,
-            paymentStatus: order.payment_status || 'paid'
+            paymentStatus: order.payment_status || 'paid',
+            discount: order.discount || 0
           });
         });
         renderGrid();
@@ -780,7 +786,8 @@
         status: 'draft',
         total: 0,
         createdAt: new Date().toISOString(),
-        paymentStatus: 'paid'
+        paymentStatus: 'paid',
+        discount: 0
       };
       allCards.unshift(card); // newest first
       saveToLocalStorage();
@@ -882,6 +889,7 @@
         const addonTotal = (entry.addons || []).reduce((s, a) => s + (a.price || 0), 0);
         total += (price + flavourPrice + addonTotal) * qty;
       });
+      total -= (card.discount || 0);
       return total;
     }
 
@@ -939,6 +947,9 @@
 
       // Store original cart for comparison (to avoid unnecessary kitchen resets)
       editingOriginalCartString = JSON.stringify(card.cart);
+
+      // Load discount
+      document.getElementById('edit-discount').value = card.discount || '';
 
       const billBtn = document.getElementById('btn-print-bill');
       if (isSent && card.dbId) {
@@ -1025,12 +1036,23 @@
       validateDraftEnable();
     });
 
+    // Discount live-save
+    document.getElementById('edit-discount').addEventListener('input', () => {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (card) {
+        card.discount = parseInt(document.getElementById('edit-discount').value) || 0;
+        updateEditTotal();
+        updateWaButton();
+      }
+    });
+
     function closeEditPanel() {
       const card = allCards.find(c => c.id === editingCardId);
       if (card && card.status === 'draft') {
         card.customerName = document.getElementById('edit-customer').value.trim();
         card.note = document.getElementById('edit-note').value.trim();
         card.phone = document.getElementById('edit-phone').value.trim();
+        card.discount = parseInt(document.getElementById('edit-discount').value) || 0;
         card.total = calcCardTotal(card);
 
         // If draft has no items, discard it entirely
@@ -1316,7 +1338,8 @@
           note: card.note + (card.phone ? ' | Phone: ' + card.phone : ''),
           status: 'new',
           total: total,
-          payment_status: card.paymentStatus || 'paid'
+          payment_status: card.paymentStatus || 'paid',
+          discount: card.discount || 0
         });
 
         // Mark as sent
@@ -1374,7 +1397,8 @@
         customer_name: card.customerName,
         note: card.note + (card.phone ? ' | Phone: ' + card.phone : ''),
         total: card.total,
-        payment_status: card.paymentStatus || 'paid'
+        payment_status: card.paymentStatus || 'paid',
+        discount: card.discount || 0
       };
 
       // ONLY set status to 'new' if the items actually changed
