@@ -294,7 +294,12 @@
     }
 
     function renderItemSales() {
-      const itemCounts = {};
+      const groups = {
+        'ALL MOMOS': 0,
+        'ALL MAGGI': 0,
+        'ALL NIMBU PANI': 0,
+        'ALL BYOB': 0
+      };
       let grandTotalItems = 0;
       
       allOrders.forEach(order => {
@@ -305,49 +310,36 @@
 
         if (Array.isArray(items)) {
           items.forEach(item => {
-            const name = item.name || '';
+            const name = (item.name || '').toLowerCase();
             const qty = parseInt(item.qty) || 1;
-            let group = name;
-
-            // Grouping Logic
-            if (name.toLowerCase().includes('momo') || 
-                name.toLowerCase().includes('tandoori fried') || 
-                name.toLowerCase().includes('chipotle fried')) {
-              group = 'All Momos';
-            } else if (name.toLowerCase().includes('veggies bag') || 
-                       name.toLowerCase().includes('byob') ||
-                       name.toLowerCase().includes('chips chaat')) {
-              group = 'All BYOB';
-            } else if (name.toLowerCase().includes('maggi')) {
-              group = 'All Maggi';
-            } else if (name.toLowerCase().includes('nimbu pani') || 
-                       name.toLowerCase().includes('with soda') || 
-                       name.toLowerCase().includes('without soda')) {
-              group = 'All Nimbu Pani';
+            
+            // Precise categorization logic
+            if (name.includes('momo') || name.includes('steam') || name.includes('tandoori') || name.includes('chipotle')) {
+              groups['ALL MOMOS'] += qty;
+            } else if (name.includes('maggi') || name.includes('masala') || name.includes('cheese') || name.includes('garlic')) {
+              groups['ALL MAGGI'] += qty;
+            } else if (name.includes('nimbu') || name.includes('soda')) {
+              groups['ALL NIMBU PANI'] += qty;
+            } else {
+              // Default everything else to BYOB (bags, chips, custom items)
+              groups['ALL BYOB'] += qty;
             }
-
-            itemCounts[group] = (itemCounts[group] || 0) + qty;
             grandTotalItems += qty;
           });
         }
       });
 
       const grid = document.getElementById('item-sales-grid');
-      const sorted = Object.entries(itemCounts).sort((a,b) => b[1] - a[1]);
-
-      if (sorted.length === 0) {
-        grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:20px;">No sales data</div>';
-        return;
-      }
-
-      let html = sorted.map(([name, qty]) => `
+      const keys = ['ALL MOMOS', 'ALL BYOB', 'ALL NIMBU PANI', 'ALL MAGGI'];
+      
+      let html = keys.map(key => `
         <div class="stat-card">
-          <div class="stat-value" style="font-size:1.6rem;">${qty}</div>
-          <div class="stat-label">${name}</div>
+          <div class="stat-value" style="font-size:1.6rem;">${groups[key]}</div>
+          <div class="stat-label">${key}</div>
         </div>
       `).join('');
 
-      // Add "All Sab Kuch" (Grand Total) at the end
+      // Add "Total" at the end
       html += `
         <div class="stat-card" style="border-color:var(--brand-gold); background:var(--brand-gold-dim);">
           <div class="stat-value" style="font-size:1.8rem; color:var(--brand-gold);">${grandTotalItems}</div>
