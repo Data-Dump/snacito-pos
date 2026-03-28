@@ -181,8 +181,8 @@
     .edit-overlay.show { display: flex; justify-content: flex-end; }
 
     .edit-panel {
-      width: 95vw;
-      max-width: 1400px;
+      width: 520px;
+      max-width: 100%;
       height: 100vh;
       background: var(--bg-primary);
       border-left: 2px solid var(--border-color);
@@ -237,24 +237,8 @@
 
     .edit-panel-body {
       flex: 1;
-      overflow: hidden; 
-      padding: 0;
-      display: grid;
-      grid-template-columns: 1fr 420px;
-    }
-
-    .edit-left {
-      padding: 16px 24px;
       overflow-y: auto;
-      border-right: 1px solid var(--border-color);
-    }
-
-    .edit-right {
       padding: 16px 20px;
-      overflow-y: auto;
-      background: rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
     }
 
     .edit-section-title {
@@ -325,46 +309,20 @@
     .edit-cart-item {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      background: var(--bg-card);
-      border: 1.2px solid var(--border-color);
-      border-radius: 12px;
-      margin-bottom: 8px;
-      transition: var(--transition);
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
     }
-    .edit-cart-item:hover { border-color: var(--brand-gold); }
-    .edit-cart-item.unpaid { border-left: 4px solid var(--danger); }
-    .edit-cart-item.paid { border-left: 4px solid var(--success); }
 
-    .item-paid-box {
-      width: 28px;
-      height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      border: 1px solid var(--border-color);
-      transition: 0.2s;
-    }
-    .item-paid-box.no { background: rgba(231, 76, 60, 0.1); color: var(--danger); border-color: var(--danger); }
-    .item-paid-box.yes { background: rgba(46, 204, 113, 0.1); color: var(--success); border-color: var(--success); }
+    .edit-cart-item:last-child { border-bottom: none; }
 
-    .eci-info { flex: 1; }
-    .eci-name { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); }
-    .eci-detail { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
-    .eci-price { font-size: 0.9rem; font-weight: 900; color: var(--brand-gold); text-align: right; }
-
-    .qty-controls { display: flex; align-items: center; gap: 8px; margin: 0 10px; }
-    .qty-btn { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 700; }
-    .qty-btn:hover { border-color: var(--brand-gold); color: var(--brand-gold); }
-    .qty-btn.remove { color: var(--danger); border-color: rgba(231,76,60,0.2); }
-    .qty-btn.remove:hover { background: var(--danger); color: #fff; }
+    .edit-cart-item .eci-info { flex: 1; }
+    .edit-cart-item .eci-name { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); }
+    .edit-cart-item .eci-detail { font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
+    .edit-cart-item .eci-price { font-size: 0.82rem; font-weight: 700; color: var(--brand-gold); white-space: nowrap; }
 
     .edit-panel-footer {
-      padding: 16px 24px;
+      padding: 16px 20px;
       background: var(--bg-card);
       border-top: 2px solid var(--border-color);
       flex-shrink: 0;
@@ -380,28 +338,11 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 8px;
-    }
-
-    .edit-total-label { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; }
-    .edit-total-value { font-size: 1.8rem; font-weight: 900; color: var(--brand-gold); }
-
-    .bulk-paid-btn {
-      padding: 10px;
-      width: 100%;
-      background: var(--success-dim);
-      color: var(--success);
-      border: 1.5px solid var(--success);
-      border-radius: 10px;
-      font-size: 0.75rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      cursor: pointer;
       margin-bottom: 12px;
-      transition: var(--transition);
     }
-    .bulk-paid-btn:hover { background: var(--success); color: #000; }
+
+    .edit-total-label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
+    .edit-total-value { font-size: 1.5rem; font-weight: 900; color: var(--brand-gold); }
 
     /* Sent order view-only (Modified to allow editing) */
     .edit-panel.is-sent .edit-panel-footer .btn-primary#btn-send-order { display: none; }
@@ -686,49 +627,47 @@
         <button class="edit-panel-close" onclick="closeEditPanel()">✕</button>
       </div>
       <div class="edit-panel-body">
-        <div class="edit-left" id="edit-left">
-          <!-- Menu selection grid -->
+        <!-- New Custom Item Section -->
+        <div id="custom-item-section" style="padding-bottom: 16px; border-bottom: 2px solid var(--border-color); margin-bottom: 16px;">
+          <div class="edit-section-title" style="margin-top: 0; color: var(--success);">➕ Add Custom Item</div>
+          <div class="edit-customer-row" style="margin-bottom: 0; display: flex; gap: 8px;">
+            <input type="text" class="pos-input" id="custom-name" placeholder="Item Name" style="flex: 2;">
+            <input type="number" class="pos-input" id="custom-price" placeholder="Price (₹)" style="flex: 1;">
+            <button class="btn-primary" onclick="addCustomItem()" style="width: auto; padding: 0 16px; background: var(--success); white-space: nowrap;">Add</button>
+          </div>
         </div>
-        <div class="edit-right" id="edit-right">
-          <!-- Cart items list -->
+        <div id="edit-body">
+          <!-- Menu + Cart rendered by JS -->
         </div>
       </div>
       <div class="edit-panel-footer" id="edit-footer">
-        <div style="display:flex; gap:20px;">
-          <div style="flex:1;">
-             <div class="edit-customer-row">
-              <input type="text" class="pos-input" id="edit-customer" placeholder="Customer Name (required)">
-              <input type="text" class="pos-input" id="edit-note" placeholder="Note...">
-            </div>
-            <div class="edit-customer-row" style="margin-bottom:0px;">
-              <div style="display:flex; align-items:center; gap:0; flex:1; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-sm); overflow:hidden;">
-                <span style="padding:0 10px; font-size:0.8rem; font-weight:600; color:var(--text-muted); white-space:nowrap;">+91</span>
-                <input type="tel" class="pos-input" id="edit-phone" placeholder="Phone Number (or 0)" maxlength="10" style="border:none; border-left:1px solid var(--border-color); border-radius:0;">
-              </div>
-            </div>
-          </div>
-          <div style="width:300px; display:flex; flex-direction:column; justify-content:center; border-left:1px solid var(--border-color); padding-left:20px;">
-            <div class="edit-customer-row" style="margin-bottom:12px; align-items:center; gap:12px;">
-              <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">Global:</span>
-              <label class="pos-toggle">
-                <input type="checkbox" id="edit-paid" checked onchange="toggleGlobalPaid(this.checked)">
-                <span class="pos-toggle-slider"></span>
-              </label>
-              <span id="edit-paid-label" style="font-size:0.85rem; font-weight:800; color:var(--success);">PAID</span>
-            </div>
-            <div class="edit-total-row">
-              <span class="edit-total-label">Total</span>
-              <span class="edit-total-value" id="edit-total">₹0</span>
-            </div>
+        <div class="edit-customer-row">
+          <input type="text" class="pos-input" id="edit-customer" placeholder="Customer Name (required)">
+          <input type="text" class="pos-input" id="edit-note" placeholder="Note...">
+        </div>
+        <div class="edit-customer-row" style="margin-bottom:10px;">
+          <div style="display:flex; align-items:center; gap:0; flex:1; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-sm); overflow:hidden;">
+            <span style="padding:0 10px; font-size:0.8rem; font-weight:600; color:var(--text-muted); white-space:nowrap;">+91</span>
+            <input type="tel" class="pos-input" id="edit-phone" placeholder="Phone Number or 0 if none" maxlength="10" style="border:none; border-left:1px solid var(--border-color); border-radius:0;">
           </div>
         </div>
-
-        <div style="display:flex; gap:12px; margin-top:16px;">
-          <button class="btn-primary" id="btn-send-order" disabled style="flex:2;">🔔 Send to Kitchen</button>
-          <button class="btn-primary" id="btn-update-order" style="display:none; background:var(--brand-gold); flex:2;">💾 Update Order</button>
-          <a class="btn-primary" id="btn-send-wa" href="#" target="_blank" style="display:none; background:#25D366; text-decoration:none; color:#fff; flex:1; display:flex; align-items:center; justify-content:center;">📱 WhatsApp</a>
-          <button class="btn-primary" id="btn-delete-order" style="background:var(--danger); border-color:var(--danger); width:auto; padding:0 12px; min-width:unset;" onclick="deleteOrder()">🗑️</button>
+        <div class="edit-customer-row" style="margin-bottom:12px; align-items:center; gap:12px;">
+          <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">Payment:</span>
+          <label class="pos-toggle">
+            <input type="checkbox" id="edit-paid" checked>
+            <span class="pos-toggle-slider"></span>
+          </label>
+          <span id="edit-paid-label" style="font-size:0.85rem; font-weight:800; color:var(--success);">PAID</span>
         </div>
+        <div class="edit-total-row">
+          <span class="edit-total-label">Total</span>
+          <span class="edit-total-value" id="edit-total">₹0</span>
+        </div>
+        <a class="btn-primary" id="btn-send-wa" href="#" target="_blank" style="display:none; background:#25D366; text-align:center; text-decoration:none; color:#fff; font-size:0.82rem; padding:10px 16px; border-radius:10px;">📱 Send WhatsApp Confirmation</a>
+        <div style="border-top:1px solid var(--border-color); margin:6px 0;"></div>
+        <button class="btn-primary" id="btn-send-order" disabled>🔔 Send to Kitchen</button>
+        <button class="btn-primary" id="btn-update-order" style="display:none; background:var(--brand-gold);">💾 Update Order</button>
+        <button class="btn-primary" id="btn-delete-order" style="margin-top:12px; background:var(--danger); border-color:var(--danger);" onclick="deleteOrder()">🗑️ Delete Order</button>
       </div>
     </div>
   </div>
@@ -761,24 +700,24 @@
     </div>
   </div>
 
+  <!-- WhatsApp Toasts are rendered dynamically by pos-app.js -->
+
   <script src="pos-app.js?v=2"></script>
   <script>
     // ═══════════════════════════════════════════
     //  STATE: All orders stored as cards
+    //  Draft orders saved in localStorage
+    //  Sent orders loaded from Supabase
     // ═══════════════════════════════════════════
 
-    let allCards = []; 
+    let allCards = []; // { id, token, cart[], customerName, note, status:'draft'|'sent', total, createdAt, sentAt }
     let editingCardId = null;
     let cardCounter = parseInt(localStorage.getItem('snk_card_counter') || '0');
-    let onlineOrders = [];
-    let onlineOrderCount = 0;
-    let importedOnlineIds = JSON.parse(localStorage.getItem('snk_imported_online') || '[]');
 
     function saveToLocalStorage() {
       const drafts = allCards.filter(c => c.status === 'draft');
       localStorage.setItem('snk_drafts', JSON.stringify(drafts));
       localStorage.setItem('snk_card_counter', String(cardCounter));
-      localStorage.setItem('snk_imported_online', JSON.stringify(importedOnlineIds));
     }
 
     function loadFromLocalStorage() {
@@ -788,148 +727,287 @@
           const drafts = JSON.parse(raw);
           drafts.forEach(d => { d.status = 'draft'; allCards.push(d); });
         }
-      } catch (e) { }
+      } catch (e) { /* ignore */ }
     }
 
+    // Load sent orders from Supabase
     async function loadSentOrders() {
       try {
         const data = await supabaseSelect('pos_orders', 'select=*');
         data.forEach(order => {
-          let card = allCards.find(c => c.token === order.token && c.status === 'sent');
-          if (card) {
-            card.dbStatus = order.status;
-            card.paymentStatus = order.payment_status || 'paid';
-            return;
-          }
-          const items = order.items || [];
+          // Don't duplicate
+          if (allCards.find(c => c.token === order.token && c.status === 'sent')) return;
+
+          const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
           allCards.push({
             id: 'sent-' + order.id,
-            dbId: order.id,
             token: order.token,
-            cart: items.map(i => ({
-              name: i.name, qty: i.qty, price: i.price,
-              flavour: i.flavour, addons: i.addons || [],
-              paid: i.paid !== false
+            cart: items.map(item => ({
+              menuItem: { id: item.name, name: item.name, price: item.price },
+              qty: item.qty,
+              flavour: item.flavour || null,
+              addons: item.addons || []
             })),
-            customerName: order.customer_name,
-            note: order.note,
+            customerName: order.customer_name || '',
+            note: order.note || '',
             status: 'sent',
             dbStatus: order.status,
-            paymentStatus: order.payment_status || 'paid',
             total: order.total,
             createdAt: order.created_at,
-            sentAt: order.created_at
+            sentAt: order.created_at,
+            dbId: order.id,
+            paymentStatus: order.payment_status || 'paid'
           });
         });
         renderGrid();
-      } catch (e) { }
+      } catch (e) { console.error('Failed to load sent orders:', e); }
     }
 
-    function calcCardTotal(card) {
-      if (!card || !card.cart) return 0;
-      return card.cart.reduce((sum, entry) => {
-        const base = entry.menuItem?.price || entry.price || 0;
-        const flvPrice = (entry.flavour && typeof entry.flavour === 'object') ? (entry.flavour.price || 0) : 0;
-        const addonSum = (entry.addons || []).reduce((s, a) => s + (a.price || 0), 0);
-        return sum + (base + flvPrice + addonSum) * (entry.qty || 1);
-      }, 0);
+    // ═══════════════════════════════════════════
+    //  CREATE NEW DRAFT ORDER
+    // ═══════════════════════════════════════════
+
+    async function createNewDraft() {
+      cardCounter++;
+      const card = {
+        id: 'draft-' + cardCounter,
+        token: await generateToken(),
+        cart: [],
+        customerName: '',
+        note: '',
+        status: 'draft',
+        total: 0,
+        createdAt: new Date().toISOString(),
+        paymentStatus: 'paid'
+      };
+      allCards.unshift(card); // newest first
+      saveToLocalStorage();
+      renderGrid();
+      openEditPanel(card.id);
     }
 
-    async function generateToken() {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      let token = '';
-      for (let i = 0; i < 4; i++) token += chars.charAt(Math.floor(Math.random() * chars.length));
-      return token;
-    }
+    // ═══════════════════════════════════════════
+    //  RENDER CARDS GRID
+    // ═══════════════════════════════════════════
 
     function renderGrid() {
       const grid = document.getElementById('orders-grid');
-      let html = `
-        <div class="new-order-card" onclick="createNewOrder()">
-          <div class="plus-icon">+</div><div class="plus-label">New Order</div>
-        </div>
-        <div class="online-orders-card" onclick="openOnlineModal()">
-          <div class="ol-icon">📱</div><div class="ol-label">Online</div>
-          <div class="ol-count ${onlineOrderCount === 0 ? 'zero' : ''}" id="ol-count-badge">${onlineOrderCount} pending</div>
-        </div>`;
 
+      // Sort: drafts first, then sent by newest
       const sorted = [...allCards].sort((a, b) => {
-        const aUnpaid = a.status === 'sent' && a.paymentStatus === 'unpaid';
-        const bUnpaid = b.status === 'sent' && b.paymentStatus === 'unpaid';
-        if (aUnpaid && !bUnpaid) return -1;
-        if (!aUnpaid && bUnpaid) return 1;
-        if (a.status === 'draft' && b.status === 'sent') return -1;
-        if (a.status === 'sent' && b.status === 'draft') return 1;
+        const aUp = a.paymentStatus === 'unpaid';
+        const bUp = b.paymentStatus === 'unpaid';
+        if (aUp && !bUp) return -1;
+        if (!aUp && bUp) return 1;
+
+        if (a.status === 'draft' && b.status !== 'draft') return -1;
+        if (a.status !== 'draft' && b.status === 'draft') return 1;
         return new Date(b.createdAt) - new Date(a.createdAt);
       });
 
-      sorted.forEach(card => {
-        const total = calcCardTotal(card);
-        const isUnpaid = card.status === 'sent' && card.paymentStatus === 'unpaid';
-        html += `
-          <div class="order-card ${card.status} ${isUnpaid ? 'unpaid' : ''}" onclick="openEditPanel('${card.id}')">
-            <div class="order-card-header">
-              <div>
-                <div class="order-card-token">${card.token}</div>
-                <div class="order-card-customer">${card.customerName || 'Walk-in'}</div>
-              </div>
-              ${card.status === 'draft' ? '<span class="card-badge-draft">Draft</span>' : `<span class="card-badge-sent" style="background:${getStatusColor(card.dbStatus)}22; color:${getStatusColor(card.dbStatus)}">${card.dbStatus}</span>`}
-            </div>
-            <div class="order-card-body">`;
-        
-        if (card.cart.length === 0) {
-          html += `<div class="order-card-empty">Empty</div>`;
-        } else {
-          card.cart.slice(0, 5).forEach(item => {
-            const name = item.menuItem?.name || item.name;
-            const dot = item.paid === false ? '<span style="color:var(--danger)">● </span>' : '';
-            html += `<div class="order-card-item-line"><span class="oname">${dot}${name}</span><span class="oqty">x${item.qty}</span></div>`;
-          });
-          if (card.cart.length > 5) html += `<div class="order-card-item-line" style="color:var(--text-muted); font-style:italic;">+${card.cart.length-5} more</div>`;
-        }
+      let html = '';
 
-        html += `</div>
-            <div class="order-card-footer">
-              <div class="order-card-total">₹${total}</div>
-              <div class="order-card-time">${card.createdAt ? new Date(card.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</div>
-            </div>
-          </div>`;
+      // New Order card (always first)
+      html += `<div class="new-order-card" onclick="createNewDraft()">
+        <div class="plus-icon">+</div>
+        <div class="plus-label">New Order</div>
+      </div>`;
+
+      // Online Orders card (second)
+      html += `<div class="online-orders-card" onclick="openOnlineModal()">
+        <div class="ol-icon">📱</div>
+        <div class="ol-label">Online Orders</div>
+        <div class="ol-count ${onlineOrderCount === 0 ? 'zero' : ''}" id="ol-count-badge">${onlineOrderCount} pending</div>
+      </div>`;
+
+      sorted.forEach(card => {
+        const isSent = card.status === 'sent';
+        const itemCount = card.cart.reduce((s, c) => s + (c.qty || 1), 0);
+        const total = calcCardTotal(card);
+        const timeStr = formatCardTime(card.createdAt);
+
+        const isUnpaid = card.paymentStatus === 'unpaid';
+        html += `<div class="order-card ${isSent ? 'sent' : 'draft'} ${isUnpaid ? 'unpaid' : ''}" onclick="openEditPanel('${card.id}')">`;
+
+        // Header
+        html += `<div class="order-card-header">
+          <div>
+            <div class="order-card-token">${card.token}</div>
+            <div class="order-card-customer">${card.customerName || 'Walk-in'}</div>
+          </div>
+          <span class="${isSent ? 'card-badge-sent' : 'card-badge-draft'}">${isSent ? (card.dbStatus || 'sent') : 'Draft'}</span>
+        </div>`;
+
+        // Body — item list
+        html += `<div class="order-card-body">`;
+        if (card.cart.length === 0) {
+          html += `<div class="order-card-empty">No items — tap to add</div>`;
+        } else {
+          card.cart.slice(0, 5).forEach(entry => {
+            const name = entry.menuItem?.name || entry.name || '?';
+            html += `<div class="order-card-item-line">
+              <span class="oname">${name}</span>
+              <span class="oqty">×${entry.qty || 1}</span>
+            </div>`;
+          });
+          if (card.cart.length > 5) {
+            html += `<div class="order-card-item-line" style="color:var(--text-muted);font-style:italic;">+${card.cart.length - 5} more...</div>`;
+          }
+        }
+        html += `</div>`;
+
+        // Footer
+        html += `<div class="order-card-footer">
+          <span class="order-card-total">₹${total}</span>
+          <span class="order-card-time">${timeStr}</span>
+        </div>`;
+
+        html += `</div>`;
       });
+
       grid.innerHTML = html;
     }
 
-    function getStatusColor(s) {
-      if (s === 'new') return '#f1c40f';
-      if (s === 'preparing') return '#3498db';
-      if (s === 'ready') return '#2ecc71';
-      return '#95a5a6';
+    function calcCardTotal(card) {
+      let total = 0;
+      card.cart.forEach(entry => {
+        const price = entry.menuItem?.price || entry.price || 0;
+        const qty = entry.qty || 1;
+        const flavourPrice = (entry.flavour && typeof entry.flavour === 'object') ? (entry.flavour.price || 0) : 0;
+        const addonTotal = (entry.addons || []).reduce((s, a) => s + (a.price || 0), 0);
+        total += (price + flavourPrice + addonTotal) * qty;
+      });
+      return total;
     }
 
-    async function createNewOrder() {
-      cardCounter++;
-      const token = await generateToken();
-      const newCard = { id: 'draft-' + cardCounter, token, cart: [], customerName: '', note: '', phone: '', status: 'draft', createdAt: new Date().toISOString(), paymentStatus: 'paid' };
-      allCards.unshift(newCard);
-      saveToLocalStorage();
-      renderGrid();
-      openEditPanel(newCard.id);
+    function formatCardTime(isoStr) {
+      if (!isoStr) return '';
+      const d = new Date(isoStr);
+      return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
     }
 
-    function openEditPanel(id) {
-      editingCardId = id;
-      const card = allCards.find(c => c.id === id);
+    // ═══════════════════════════════════════════
+    //  EDIT PANEL (slide-in)
+    // ═══════════════════════════════════════════
+
+    function openEditPanel(cardId) {
+      editingCardId = cardId;
+      const card = allCards.find(c => c.id === cardId);
       if (!card) return;
-      document.getElementById('edit-title').textContent = (card.status==='draft'?'New Order ':'Edit Order ') + card.token;
+
+      // Clear custom section
+      document.getElementById('custom-name').value = '';
+      document.getElementById('custom-price').value = '';
+
+      const delBtn = document.getElementById('btn-delete-order');
+      if (delBtn) {
+        delBtn.disabled = false;
+        delBtn.textContent = '🗑️ Delete Order';
+      }
+
+      const overlay = document.getElementById('edit-overlay');
+      const panel = document.getElementById('edit-panel');
+      const isSent = card.status === 'sent';
+
+      panel.classList.toggle('is-sent', isSent);
+      document.getElementById('edit-title').textContent = card.token + (isSent ? ' (Sent)' : '');
       document.getElementById('edit-customer').value = card.customerName || '';
       document.getElementById('edit-note').value = card.note || '';
-      document.getElementById('edit-phone').value = card.phone || '';
-      document.getElementById('edit-paid').checked = (card.paymentStatus !== 'unpaid');
+      // Orders can be edited even if sent
+      document.getElementById('edit-customer').disabled = false;
+      document.getElementById('edit-note').disabled = false;
+
+      // Load phone — from card.phone or extract from note
+      let phone = card.phone || '';
+      if (!phone && card.note) {
+        const phoneMatch = card.note.match(/Phone:\s*(?:\+?91)?\s*(\d{1,10})/);
+        if (phoneMatch) phone = phoneMatch[1];
+      }
+      document.getElementById('edit-phone').value = phone;
+      document.getElementById('edit-phone').disabled = false;
+
+      document.getElementById('edit-phone').disabled = false;
+
+      // Payment status
+      document.getElementById('edit-paid').checked = card.paymentStatus !== 'unpaid';
       updatePaidLabel();
-      renderEditBody();
-      document.getElementById('edit-overlay').classList.add('show');
-      validateDraftEnable();
+
       updateWaButton();
+      renderEditBody();
+      overlay.classList.add('show');
     }
+
+    function validateDraftEnable() {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (!card) return;
+      const sendBtn = document.getElementById('btn-send-order');
+      const updateBtn = document.getElementById('btn-update-order');
+
+      const name = document.getElementById('edit-customer').value.trim();
+      const phone = document.getElementById('edit-phone').value.trim();
+      const validPhone = phone === '0' || /^\d{10}$/.test(phone);
+      const validName = name.length > 0;
+      const hasItems = card.cart.length > 0;
+
+      if (card.status === 'draft') {
+        sendBtn.disabled = !hasItems || !validName || !validPhone;
+        sendBtn.style.display = '';
+        updateBtn.style.display = 'none';
+      } else {
+        sendBtn.style.display = 'none';
+        updateBtn.style.display = '';
+        updateBtn.disabled = !hasItems || !validName || !validPhone;
+      }
+    }
+
+    function updateWaButton() {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (!card) return;
+
+      const waBtn = document.getElementById('btn-send-wa');
+      const phone = document.getElementById('edit-phone').value.trim();
+
+      if (phone !== '0' && /^\d{10}$/.test(phone)) {
+        const name = card.customerName || document.getElementById('edit-customer').value.trim() || 'Customer';
+        const total = calcCardTotal(card);
+
+        let itemLines = '';
+        card.cart.forEach(entry => {
+          const itemName = entry.menuItem?.name || entry.name || '?';
+          itemLines += '\n' + String.fromCodePoint(0x2022) + ' ' + itemName + ' x' + (entry.qty || 1);
+        });
+
+        const lines = [
+          'Hey ' + name + '! Thank you for ordering from *SNACITO*!',
+          '',
+          '*Order ID:* ' + card.token,
+          '*Items:*' + itemLines,
+          '',
+          '*Total:* Rs.' + total,
+          '',
+          'Pick up at *SNACITO Stall*, Main Sports Ground, JKLU',
+          '27-29 March 2026',
+          '',
+          'See you there!'
+        ];
+        const msg = lines.join('\n');
+
+        waBtn.href = 'https://wa.me/91' + phone + '?text=' + encodeURIComponent(msg);
+        waBtn.style.display = '';
+      } else {
+        waBtn.style.display = 'none';
+      }
+    }
+
+    // Update WA button live as phone is typed
+    document.getElementById('edit-phone').addEventListener('input', () => {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (card) {
+        card.phone = document.getElementById('edit-phone').value.trim();
+      }
+      updateWaButton();
+      validateDraftEnable();
+    });
 
     function closeEditPanel() {
       const card = allCards.find(c => c.id === editingCardId);
@@ -937,279 +1015,687 @@
         card.customerName = document.getElementById('edit-customer').value.trim();
         card.note = document.getElementById('edit-note').value.trim();
         card.phone = document.getElementById('edit-phone').value.trim();
-        if (card.cart.length === 0) allCards = allCards.filter(c => c.id !== card.id);
+        card.total = calcCardTotal(card);
+
+        // If draft has no items, discard it entirely
+        if (card.cart.length === 0) {
+          allCards = allCards.filter(c => c.id !== card.id);
+        }
+
         saveToLocalStorage();
       }
+
       editingCardId = null;
       document.getElementById('edit-overlay').classList.remove('show');
       renderGrid();
     }
 
-    document.getElementById('edit-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeEditPanel(); });
+    // Close on backdrop click
+    document.getElementById('edit-overlay').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeEditPanel();
+    });
 
     function renderEditBody() {
       const card = allCards.find(c => c.id === editingCardId);
       if (!card) return;
-      const left = document.getElementById('edit-left');
-      const right = document.getElementById('edit-right');
 
-      // Cart Side
-      let rHtml = `<button class="bulk-paid-btn" onclick="markAllPaid()">✅ Mark All Paid</button>`;
-      if (card.cart.length === 0) rHtml += `<div style="text-align:center; color:var(--text-muted); padding:60px 0;">Empty</div>`;
-      else {
-        card.cart.forEach((item, idx) => {
-          const isPaid = item.paid !== false;
-          const price = (item.menuItem?.price || item.price || 0) + (item.flavour?.price || 0);
-          const addonCost = (item.addons || []).reduce((s, a) => s + (a.price || 0), 0);
-          const total = (price + addonCost) * item.qty;
-          let details = item.flavour ? (typeof item.flavour === 'object' ? item.flavour.name : item.flavour) : '';
-          if (item.addons?.length) details += (details?' · ':'') + item.addons.map(a=>a.name).join(', ');
+      const body = document.getElementById('edit-body');
+      const isSent = card.status === 'sent';
+      let html = '';
 
-          rHtml += `<div class="edit-cart-item ${isPaid?'paid':'unpaid'}">
-            <div class="item-paid-box ${isPaid?'yes':'no'}" onclick="toggleItemPaid(${idx})">${isPaid?'₹':'○'}</div>
-            <div class="eci-info"><div class="eci-name">${item.menuItem?.name || item.name}</div><div class="eci-detail">${details}</div></div>
-            <div class="qty-controls">
-              <button class="qty-btn" onclick="editChangeQty(${idx},-1)">−</button><span class="qty-val">${item.qty}</span><button class="qty-btn" onclick="editChangeQty(${idx},1)">+</button>
-              <button class="qty-btn remove" onclick="editDeleteItem(${idx})">✕</button>
-            </div>
-            <div class="eci-price">₹${total}</div>
+      // Current cart items
+      html += `<div class="edit-section-title">🧾 Order Items</div>`;
+      if (card.cart.length === 0) {
+        html += `<div style="text-align:center; color:var(--text-muted); padding:16px 0; font-size:0.85rem;">No items yet — add from menu below</div>`;
+      } else {
+        card.cart.forEach((entry, idx) => {
+          const name = entry.menuItem?.name || entry.name || '?';
+          const price = entry.menuItem?.price || entry.price || 0;
+          const addonCost = (entry.addons || []).reduce((s, a) => s + (a.price || 0), 0);
+          const lineTotal = (price + addonCost + (entry.flavour?.price || 0)) * (entry.qty || 1);
+          let detail = '';
+          if (entry.flavour) detail += (typeof entry.flavour === 'object' ? entry.flavour.name : entry.flavour);
+          if (entry.addons && entry.addons.length > 0) {
+            if (detail) detail += ' · ';
+            detail += entry.addons.map(a => a.name).join(', ');
+          }
+
+          html += `<div class="edit-cart-item">
+            <div class="eci-info">
+              <div class="eci-name">${name}</div>
+              ${detail ? `<div class="eci-detail">${detail}</div>` : ''}
+            </div>`;
+          html += `<div class="qty-controls">
+            <button class="qty-btn" onclick="editChangeQty(${idx}, -1)">−</button>
+            <span class="qty-val">${entry.qty || 1}</span>
+            <button class="qty-btn" onclick="editChangeQty(${idx}, 1)">+</button>
+            <button class="qty-btn remove" onclick="editDeleteItem(${idx})" style="margin-left: 8px;">✕</button>
+          </div>`;
+          html += `<div class="eci-price">₹${lineTotal}</div>
           </div>`;
         });
       }
-      right.innerHTML = rHtml;
 
-      // Menu Side
-      let lHtml = `<div style="padding-bottom:16px; border-bottom:1px solid var(--border-color); margin-bottom:16px;">
-        <div class="edit-section-title" style="margin-top:0; color:var(--success)">➕ Custom Item</div>
-        <div style="display:flex; gap:8px;">
-          <input type="text" class="pos-input" id="custom-name" placeholder="Name" style="flex:2"><input type="number" class="pos-input" id="custom-price" placeholder="Price" style="flex:1">
-          <button class="btn-primary" onclick="addCustomItem()" style="width:auto; padding:0 16px; background:var(--success)">Add</button>
-        </div>
-      </div>`;
-      MENU.categories.forEach(cat => {
-        lHtml += `<div class="edit-section-title" style="color:var(--brand-gold)">${cat.icon} ${cat.name}</div><div class="edit-menu-grid">`;
-        cat.items.forEach(it => {
-          const qty = card.cart.filter(c => (c.menuItem?.id || c.id) === it.id).reduce((s,c)=>s+c.qty, 0);
-          lHtml += `<button class="edit-menu-btn ${qty>0?'has-qty':''}" onclick="editAddItem('${it.id}')">${qty>0?`<span class="em-qty">${qty}</span>`:''}<div class="em-name">${it.name}</div><div class="em-price">₹${it.price}</div></button>`;
+      // Menu (Available for both drafts AND sent orders now)
+      if (true) {
+        MENU.categories.forEach(cat => {
+          html += `<div class="edit-section-title add-section">${cat.icon} ${cat.name}</div>`;
+          html += `<div class="edit-menu-grid">`;
+          cat.items.forEach(item => {
+            const inCart = card.cart.filter(c => (c.menuItem?.id || c.id) === item.id);
+            const qty = inCart.reduce((s, c) => s + (c.qty || 1), 0);
+
+            html += `<button class="edit-menu-btn ${qty > 0 ? 'has-qty' : ''}" onclick="editAddItem('${item.id}')">
+              ${qty > 0 ? `<span class="em-qty">${qty}</span>` : ''}
+              <div class="em-name">${item.name}</div>
+              <div class="em-price">₹${item.price}</div>
+            </button>`;
+          });
+          html += `</div>`;
         });
-        lHtml += `</div>`;
-      });
-      left.innerHTML = lHtml;
-      updateEditTotal();
-    }
-
-    function toggleItemPaid(idx) {
-      const card = allCards.find(c => c.id === editingCardId);
-      if (card) { card.cart[idx].paid = (card.cart[idx].paid === false); syncGlobalPayment(); renderEditBody(); }
-    }
-
-    function markAllPaid() {
-      const card = allCards.find(c => c.id === editingCardId);
-      if (card) { card.cart.forEach(i => i.paid = true); card.paymentStatus = 'paid'; document.getElementById('edit-paid').checked = true; updatePaidLabel(); renderEditBody(); }
-    }
-
-    function syncGlobalPayment() {
-      const card = allCards.find(c => c.id === editingCardId);
-      if (card) {
-        const allDone = card.cart.length > 0 && card.cart.every(i => i.paid !== false);
-        card.paymentStatus = allDone ? 'paid' : 'unpaid';
-        document.getElementById('edit-paid').checked = allDone;
-        updatePaidLabel();
       }
+
+      body.innerHTML = html;
+      updateEditTotal();
     }
 
     function updateEditTotal() {
       const card = allCards.find(c => c.id === editingCardId);
-      if (card) { document.getElementById('edit-total').textContent = `₹${calcCardTotal(card)}`; validateDraftEnable(); }
+      if (!card) return;
+
+      const total = calcCardTotal(card);
+      document.getElementById('edit-total').textContent = `₹${total}`;
+
+      validateDraftEnable();
     }
 
-    function updatePaidLabel() {
-      const isPaid = document.getElementById('edit-paid').checked;
-      const lbl = document.getElementById('edit-paid-label');
-      if (lbl) { lbl.textContent = isPaid ? 'PAID' : 'NOT PAID'; lbl.style.color = isPaid ? 'var(--success)' : 'var(--danger)'; }
-    }
+    // ═══════════════════════════════════════════
+    //  EDIT PANEL ACTIONS
+    // ═══════════════════════════════════════════
 
-    function toggleGlobalPaid(isPaid) {
+    function editAddItem(itemId) {
       const card = allCards.find(c => c.id === editingCardId);
-      if (card) { card.paymentStatus = isPaid ? 'paid' : 'unpaid'; if (isPaid) card.cart.forEach(i => i.paid = true); updatePaidLabel(); renderEditBody(); }
-    }
+      if (!card) return;
 
-    function validateDraftEnable() {
-      const card = allCards.find(c => c.id === editingCardId); if (!card) return;
-      const n = document.getElementById('edit-customer').value.trim();
-      const p = document.getElementById('edit-phone').value.trim();
-      const valid = (n.length > 0) && (p === '0' || /^\d{10}$/.test(p)) && (card.cart.length > 0);
-      const isD = card.status === 'draft';
-      document.getElementById('btn-send-order').style.display = isD ? '' : 'none'; document.getElementById('btn-send-order').disabled = !valid;
-      document.getElementById('btn-update-order').style.display = isD ? 'none' : ''; document.getElementById('btn-update-order').disabled = !valid;
-    }
+      const item = findMenuItem(itemId);
+      if (!item) return;
 
-    function editAddItem(id) {
-      const card = allCards.find(c => c.id === editingCardId); if (!card) return;
-      const it = findMenuItem(id); if (!it) return;
-      if (it.hasFlavours || it.hasAddons) { openAddonModalForEdit(it); }
-      else {
-        const ex = card.cart.find(c => (c.menuItem?.id) === id && !c.flavour);
-        if (ex) ex.qty++; else card.cart.push({ menuItem: it, qty: 1, flavour: null, addons: [], paid: card.paymentStatus !== 'unpaid' });
-        saveToLocalStorage(); renderEditBody();
+      if (item.hasFlavours || item.hasAddons) {
+        openAddonModalForEdit(item);
+      } else {
+        const existing = card.cart.find(c => (c.menuItem?.id) === item.id && !c.flavour);
+        if (existing) {
+          existing.qty++;
+        } else {
+          card.cart.push({ menuItem: item, qty: 1, flavour: null, addons: [] });
+        }
+        saveToLocalStorage();
+        renderEditBody();
       }
     }
 
-    function editChangeQty(idx, d) {
-      const card = allCards.find(c => c.id === editingCardId); if (!card) return;
-      card.cart[idx].qty += d; if (card.cart[idx].qty <= 0) card.cart.splice(idx, 1);
-      if (card.status === 'draft') saveToLocalStorage(); renderEditBody();
+    function editChangeQty(idx, delta) {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (!card) return;
+
+      card.cart[idx].qty = (card.cart[idx].qty || 1) + delta;
+      if (card.cart[idx].qty <= 0) card.cart.splice(idx, 1);
+
+      if (card.status === 'draft') saveToLocalStorage();
+      renderEditBody();
     }
 
     function editDeleteItem(idx) {
-      const card = allCards.find(c => c.id === editingCardId); if (card) { card.cart.splice(idx, 1); if (card.status === 'draft') saveToLocalStorage(); renderEditBody(); }
+      if (!confirm('Are you sure you want to remove this item?')) return;
+      const card = allCards.find(c => c.id === editingCardId);
+      if (!card) return;
+
+      card.cart.splice(idx, 1);
+      if (card.status === 'draft') saveToLocalStorage();
+      renderEditBody();
     }
 
+    function findMenuItem(id) {
+      for (const cat of MENU.categories) {
+        for (const item of cat.items) {
+          if (item.id === id) return item;
+        }
+      }
+      return null;
+    }
+
+    // ─── Custom Item Action ───
     function addCustomItem() {
-      const card = allCards.find(c => c.id === editingCardId); if (!card) return;
-      const n = document.getElementById('custom-name').value.trim(), p = parseInt(document.getElementById('custom-price').value);
-      if (!n || isNaN(p)) return;
-      card.cart.push({ name: n, price: p, qty: 1, flavour: null, addons: [], paid: card.paymentStatus !== 'unpaid' });
-      document.getElementById('custom-name').value = ''; document.getElementById('custom-price').value = '';
-      if (card.status === 'draft') saveToLocalStorage(); renderEditBody();
+      const card = allCards.find(c => c.id === editingCardId);
+      if (!card) return;
+
+      const nameEl = document.getElementById('custom-name');
+      const priceEl = document.getElementById('custom-price');
+      const name = nameEl.value.trim();
+      const price = parseInt(priceEl.value);
+
+      if (!name || isNaN(price) || price < 0) {
+        showToast('Please enter a valid name and price', '⚠️');
+        return;
+      }
+
+      card.cart.push({
+        name: name,
+        price: price,
+        qty: 1,
+        flavour: null,
+        addons: []
+      });
+
+      // Clear inputs
+      nameEl.value = '';
+      priceEl.value = '';
+
+      if (card.status === 'draft') saveToLocalStorage();
+      renderEditBody();
+      showToast('Custom item added', '✅');
     }
 
-    function openAddonModalForEdit(it) {
-      const m = document.getElementById('addon-modal'), b = document.getElementById('modal-body');
-      document.getElementById('modal-title').textContent = it.name; let h = '';
-      if (it.hasFlavours && it.flavours) {
-        h += `<div class="chip-label">Flavor</div><div class="chip-group">`;
-        it.flavours.forEach((f, i) => { const n = typeof f==='object'?f.name:f, p = typeof f==='object'?f.price:0; h += `<label class="chip ${i===0?'selected':''}" onclick="toggleRadioChip(this)"><input type="radio" name="modal-flavour" value="${n}" data-price="${p}" ${i===0?'checked':''}><span>${n} ${p?`+₹${p}`:''}</span></label>`; });
-        h += `</div>`;
+    // ─── Addon modal for edit panel ───
+    function openAddonModalForEdit(item) {
+      const modal = document.getElementById('addon-modal');
+      const body = document.getElementById('modal-body');
+      document.getElementById('modal-title').textContent = item.name;
+
+      let html = '';
+      if (item.hasFlavours && item.flavours) {
+        html += `<div class="chip-label">Choose Flavour (MANDATORY)</div><div class="chip-group">`;
+        item.flavours.forEach((f, i) => {
+          const fName = typeof f === 'object' ? f.name : f;
+          const fPrice = typeof f === 'object' ? f.price : 0;
+          html += `<label class="chip ${i === 0 ? 'selected' : ''}" onclick="toggleRadioChip(this)">
+            <input type="radio" name="modal-flavour" value="${fName}" data-price="${fPrice}" ${i === 0 ? 'checked' : ''}><span>${fName} ${fPrice > 0 ? `+₹${fPrice}` : ''}</span>
+          </label>`;
+        });
+        html += `</div>`;
       }
-      if (it.hasAddons && it.addons) {
-        h += `<div class="chip-label" style="margin-top:10px">Addons</div><div class="chip-group">`;
-        it.addons.forEach(a => { h += `<label class="chip" onclick="toggleCheckChip(this)"><input type="checkbox" name="modal-addon" value="${a.name}" data-price="${a.price}"><span>${a.name} +₹${a.price}</span></label>`; });
-        h += `</div>`;
+      if (item.hasAddons && item.addons) {
+        html += `<div class="chip-label" style="margin-top:16px;">Add-Ons (Optional)</div><div class="chip-group">`;
+        item.addons.forEach(a => {
+          html += `<label class="chip" onclick="toggleCheckChip(this)">
+            <input type="checkbox" name="modal-addon" value="${a.name}" data-price="${a.price}"><span>${a.name} +₹${a.price}</span>
+          </label>`;
+        });
+        html += `</div>`;
       }
-      b.innerHTML = h; m.classList.add('show');
+
+      body.innerHTML = html;
+      modal.classList.add('show');
+
       document.getElementById('modal-confirm').onclick = () => {
-        const card = allCards.find(c => c.id === editingCardId), flv = b.querySelector('input[name="modal-flavour"]:checked');
-        const flavour = flv ? { name: flv.value, price: parseInt(flv.dataset.price) || 0 } : null, adds = [];
-        b.querySelectorAll('input[name="modal-addon"]:checked').forEach(cb => adds.push({ name: cb.value, price: parseInt(cb.dataset.price) }));
-        card.cart.push({ menuItem: it, qty: 1, flavour, addons: adds, paid: card.paymentStatus !== 'unpaid' });
-        saveToLocalStorage(); closeAddonModal(); renderEditBody();
+        const card = allCards.find(c => c.id === editingCardId);
+        if (!card) return;
+
+        const flavourEl = body.querySelector('input[name="modal-flavour"]:checked');
+        const flavour = flavourEl ? { name: flavourEl.value, price: parseInt(flavourEl.dataset.price) || 0 } : null;
+        const addons = [];
+        body.querySelectorAll('input[name="modal-addon"]:checked').forEach(cb => {
+          addons.push({ name: cb.value, price: parseInt(cb.dataset.price) });
+        });
+
+        card.cart.push({ menuItem: item, qty: 1, flavour, addons });
+        saveToLocalStorage();
+        closeAddonModal();
+        renderEditBody();
       };
     }
 
-    function closeAddonModal() { document.getElementById('addon-modal').classList.remove('show'); }
-    function toggleRadioChip(l) { l.closest('.chip-group').querySelectorAll('.chip').forEach(c=>c.classList.remove('selected')); l.classList.add('selected'); }
-    function toggleCheckChip(l) { setTimeout(() => { l.classList.toggle('selected', l.querySelector('input').checked); }, 0); }
-    function findMenuItem(id) { for (const c of MENU.categories) { for (const i of c.items) { if (i.id === id) return i; } } return null; }
+    function closeAddonModal() {
+      document.getElementById('addon-modal').classList.remove('show');
+    }
+
+    function toggleRadioChip(label) {
+      label.closest('.chip-group').querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+      label.classList.add('selected');
+    }
+
+    function toggleCheckChip(label) {
+      setTimeout(() => {
+        const cb = label.querySelector('input');
+        label.classList.toggle('selected', cb.checked);
+      }, 0);
+    }
+
+    // ═══════════════════════════════════════════
+    //  SEND ORDER TO KITCHEN
+    // ═══════════════════════════════════════════
 
     document.getElementById('btn-send-order').addEventListener('click', async () => {
-      const card = allCards.find(c => c.id === editingCardId); if (!card) return;
-      const btn = document.getElementById('btn-send-order'); btn.disabled = true; btn.textContent = '...';
-      const items = card.cart.map(e => ({ name: e.menuItem?.name || e.name, qty: e.qty, price: (e.menuItem?.price || e.price || 0) + (e.flavour?.price || 0), flavour: e.flavour?.name || e.flavour, addons: e.addons, paid: e.paid !== false }));
+      const card = allCards.find(c => c.id === editingCardId);
+      if (!card || card.cart.length === 0 || card.status !== 'draft') return;
+
+      // Save customer info
+      card.customerName = document.getElementById('edit-customer').value.trim();
+      card.note = document.getElementById('edit-note').value.trim();
+      card.phone = document.getElementById('edit-phone').value.trim();
+
+      const btn = document.getElementById('btn-send-order');
+      btn.disabled = true;
+      btn.textContent = '⏳ Sending...';
+
+      const items = card.cart.map(entry => {
+        const basePrice = entry.menuItem?.price || entry.price || 0;
+        const flavourPrice = (entry.flavour && typeof entry.flavour === 'object') ? (entry.flavour.price || 0) : 0;
+        return {
+          name: entry.menuItem?.name || entry.name,
+          qty: entry.qty || 1,
+          price: basePrice + flavourPrice,
+          flavour: entry.flavour?.name || (typeof entry.flavour === 'string' ? entry.flavour : null),
+          addons: entry.addons || []
+        };
+      });
+
+      const total = calcCardTotal(card);
+
       try {
-        const res = await supabaseInsert('pos_orders', { token: card.token, items, customer_name: document.getElementById('edit-customer').value, note: document.getElementById('edit-note').value + (document.getElementById('edit-phone').value ? ' | Phone: ' + document.getElementById('edit-phone').value : ''), status: 'new', total: calcCardTotal(card), payment_status: card.paymentStatus });
-        card.status = 'sent'; if (res?.id) card.dbId = res.id; saveToLocalStorage(); showToast('Sent!', '🔔'); closeEditPanel();
-      } catch (e) { showToast('Error', '❌'); }
-      btn.disabled = false; btn.textContent = '🔔 Send to Kitchen';
+        const result = await supabaseInsert('pos_orders', {
+          token: card.token,
+          items: items,
+          customer_name: card.customerName || 'Walk-in',
+          note: card.note + (card.phone ? ' | Phone: ' + card.phone : ''),
+          status: 'new',
+          total: total,
+          payment_status: card.paymentStatus || 'paid'
+        });
+
+        // Mark as sent
+        card.status = 'sent';
+        card.dbStatus = 'new';
+        card.total = total;
+        card.sentAt = new Date().toISOString();
+        if (result && result.id) card.dbId = result.id;
+
+        // Remove from drafts in localStorage
+        saveToLocalStorage();
+        showToast(`Order ${card.token} sent to kitchen!`, '🔔');
+
+        closeEditPanel();
+      } catch (err) {
+        console.error('Failed to send order:', err);
+        showToast('Failed to send. Check connection.', '❌');
+      }
+
+      btn.disabled = false;
+      btn.textContent = '🔔 Send to Kitchen';
     });
 
     document.getElementById('btn-update-order').addEventListener('click', async () => {
-      const card = allCards.find(c => c.id === editingCardId); if (!card) return;
-      const btn = document.getElementById('btn-update-order'); btn.disabled = true;
-      const items = card.cart.map(e => ({ name: e.menuItem?.name || e.name, qty: e.qty, price: (e.menuItem?.price || e.price || 0) + (e.flavour?.price || 0), flavour: e.flavour?.name || e.flavour, addons: e.addons, paid: e.paid !== false }));
+      const card = allCards.find(c => c.id === editingCardId);
+      if (!card || card.status !== 'sent' || !card.dbId) return;
+
+      const btn = document.getElementById('btn-update-order');
+      btn.disabled = true;
+      btn.textContent = '⏳ Updating...';
+
+      // Sync latest values from inputs
+      card.customerName = document.getElementById('edit-customer').value.trim();
+      card.note = document.getElementById('edit-note').value.trim();
+      card.phone = document.getElementById('edit-phone').value.trim();
+      card.total = calcCardTotal(card);
+
+      const items = card.cart.map(entry => {
+        const basePrice = entry.menuItem?.price || entry.price || 0;
+        const flavourPrice = (entry.flavour && typeof entry.flavour === 'object') ? (entry.flavour.price || 0) : 0;
+        return {
+          name: entry.menuItem?.name || entry.name,
+          qty: entry.qty || 1,
+          price: basePrice + flavourPrice,
+          flavour: entry.flavour?.name || (typeof entry.flavour === 'string' ? entry.flavour : null),
+          addons: entry.addons || []
+        };
+      });
+
       try {
-        await supabaseUpdate('pos_orders', card.dbId, { items, customer_name: document.getElementById('edit-customer').value, note: document.getElementById('edit-note').value + (document.getElementById('edit-phone').value ? ' | Phone: ' + document.getElementById('edit-phone').value : ''), total: calcCardTotal(card), payment_status: card.paymentStatus, status: 'new' });
-        showToast('Updated!', '💾'); renderGrid(); closeEditPanel();
-      } catch (e) { }
+        await supabaseUpdate('pos_orders', card.dbId, {
+          items: items,
+          customer_name: card.customerName,
+          note: card.note + (card.phone ? ' | Phone: ' + card.phone : ''),
+          total: card.total,
+          payment_status: card.paymentStatus || 'paid',
+          status: 'new' // Send back to kitchen
+        });
+
+        card.dbStatus = 'new'; // Update local state
+        showToast(`Order ${card.token} updated and sent to kitchen!`, '💾');
+        renderGrid();
+        validateDraftEnable(); // Update button state
+      } catch (err) {
+        console.error('Failed to update order:', err);
+        showToast('Failed to update. Check connection.', '❌');
+      }
+
       btn.disabled = false;
+      btn.textContent = '💾 Update Order';
     });
 
     async function deleteOrder() {
-      const card = allCards.find(c => c.id === editingCardId); if (!card) return;
-      if (!confirm('Delete?')) return;
-      try { if (card.status === 'sent') await supabaseDelete('pos_orders', card.dbId); allCards = allCards.filter(c => c.id !== editingCardId); saveToLocalStorage(); closeEditPanel(); } catch (e) { }
+      const cardId = editingCardId;
+      if (!cardId) return;
+
+      const card = allCards.find(c => c.id === cardId);
+      if (!card) return;
+
+      if (!confirm(`Are you sure you want to DELETE order ${card.token}?\nThis action cannot be undone.`)) return;
+
+      const btn = document.getElementById('btn-delete-order');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '⏳ Deleting...';
+
+      try {
+        if (card.status === 'sent' && card.dbId) {
+          await supabaseDelete('pos_orders', card.dbId);
+          showToast(`Order ${card.token} deleted from database`, '🗑️');
+        } else {
+          showToast(`Draft ${card.token} discarded`, '🗑️');
+        }
+
+        // Remove from allCards
+        allCards = allCards.filter(c => c.id !== cardId);
+        
+        // If it was a draft, update localStorage
+        if (card.status === 'draft') {
+          saveToLocalStorage();
+        }
+
+        btn.disabled = false;
+        btn.textContent = originalText;
+
+        closeEditPanel();
+      } catch (err) {
+        console.error('Failed to delete order:', err);
+        showToast('Failed to delete. Check connection.', '❌');
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
     }
 
-    document.getElementById('edit-customer').addEventListener('input', validateDraftEnable);
-    document.getElementById('edit-note').addEventListener('input', validateDraftEnable);
-    document.getElementById('edit-phone').addEventListener('input', () => {
-      const card = allCards.find(c => c.id === editingCardId); if (card) card.phone = document.getElementById('edit-phone').value.trim();
-      updateWaButton(); validateDraftEnable();
+    document.getElementById('edit-paid').addEventListener('change', e => {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (card) card.paymentStatus = e.target.checked ? 'paid' : 'unpaid';
+      updatePaidLabel();
+      validateDraftEnable();
+      renderGrid(); // Refresh grid to update sorting and colors
     });
 
-    function updateWaButton() {
-      const card = allCards.find(c => c.id === editingCardId), btn = document.getElementById('btn-send-wa'), ph = document.getElementById('edit-phone').value.trim();
-      if (card && ph.length === 10 && ph !== '0') {
-        const msg = `Hi ${card.customerName || 'Customer'}! Your SNACITO order (${card.token}) for ₹${calcCardTotal(card)} is confirmed!`;
-        btn.href = `https://wa.me/91${ph}?text=${encodeURIComponent(msg)}`; btn.style.display = 'flex';
-      } else btn.style.display = 'none';
+    function updatePaidLabel() {
+      const isPaid = document.getElementById('edit-paid').checked;
+      const label = document.getElementById('edit-paid-label');
+      if (label) {
+        label.textContent = isPaid ? 'PAID' : 'NOT PAID';
+        label.style.color = isPaid ? 'var(--success)' : 'var(--danger)';
+      }
     }
 
-    function closeOnlineModal() { document.getElementById('online-modal').classList.remove('show'); }
-    function openOnlineModal() { fetchOnlineOrders(); document.getElementById('online-modal').classList.add('show'); }
+    // Customer name live-save (Updated to handle both status)
+    document.getElementById('edit-customer').addEventListener('input', () => {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (card) {
+        card.customerName = document.getElementById('edit-customer').value.trim();
+        validateDraftEnable();
+      }
+    });
+
+    // Note live-save
+    document.getElementById('edit-note').addEventListener('input', () => {
+      const card = allCards.find(c => c.id === editingCardId);
+      if (card) {
+        card.note = document.getElementById('edit-note').value.trim();
+        validateDraftEnable();
+      }
+    });
+
+    // ═══════════════════════════════════════════
+    //  ONLINE ORDERS (from main website)
+    // ═══════════════════════════════════════════
+
+    let onlineOrders = [];
+    let onlineOrderCount = 0;
+    let importedOnlineIds = JSON.parse(localStorage.getItem('snk_imported_online') || '[]');
+
+    function saveImportedIds() {
+      localStorage.setItem('snk_imported_online', JSON.stringify(importedOnlineIds));
+    }
 
     async function fetchOnlineOrders() {
       try {
         const data = await supabaseSelect('orders', 'select=*&order=id.desc');
-        onlineOrders = data || []; onlineOrderCount = onlineOrders.filter(o => !importedOnlineIds.includes(o.order_id)).length;
-        const b = document.getElementById('ol-count-badge'); if (b) { b.textContent = onlineOrderCount + ' pending'; b.classList.toggle('zero', onlineOrderCount === 0); }
-        renderOnlineModal();
-      } catch (e) { }
+        onlineOrders = data || [];
+        onlineOrderCount = onlineOrders.filter(o => !importedOnlineIds.includes(o.order_id)).length;
+        // Update badge if visible
+        const badge = document.getElementById('ol-count-badge');
+        if (badge) {
+          badge.textContent = onlineOrderCount + ' pending';
+          badge.classList.toggle('zero', onlineOrderCount === 0);
+        }
+      } catch (e) { console.error('Failed to fetch online orders:', e); }
     }
+
+    function openOnlineModal() {
+      fetchOnlineOrders().then(() => renderOnlineModal());
+      document.getElementById('online-modal').classList.add('show');
+    }
+
+    function closeOnlineModal() {
+      document.getElementById('online-modal').classList.remove('show');
+    }
+
+    document.getElementById('online-modal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeOnlineModal();
+    });
 
     function renderOnlineModal() {
-      const body = document.getElementById('online-modal-body'); if (!body) return;
-      let h = '';
-      onlineOrders.forEach(o => {
-        const imp = importedOnlineIds.includes(o.order_id);
-        h += `<div class="online-order-row ${imp?'already-imported':''}" onclick="${imp?'':`importOnlineOrder('${o.order_id}')`}">
-          <div class="oo-header"><div class="oo-id">${o.order_id}</div><div class="oo-amount">₹${o.amount}</div></div>
-          <div class="oo-name">${o.name} · ${o.phone}</div>
-          <div class="oo-items">${o.items}</div>
+      const body = document.getElementById('online-modal-body');
+
+      if (onlineOrders.length === 0) {
+        body.innerHTML = `<div class="online-empty">
+          <div class="online-empty-icon">📱</div>
+          <div class="online-empty-text">No online orders yet</div>
         </div>`;
+        return;
+      }
+
+      let html = '';
+      onlineOrders.forEach(order => {
+        const imported = importedOnlineIds.includes(order.order_id);
+        const time = order.created_at ? new Date(order.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
+
+        html += `<div class="online-order-row ${imported ? 'already-imported' : ''}" onclick="${imported ? '' : `importOnlineOrder('${order.order_id}')`}">`;
+        // Extract total from items text (e.g. "Total: ₹88") since amount may be 0 for counter orders
+        const totalMatch = (order.items || '').match(/Total:\s*₹(\d+)/);
+        const displayTotal = totalMatch ? totalMatch[1] : (order.amount || 0);
+
+        html += `<div class="oo-header">
+          <div>
+            <div class="oo-id">${order.order_id || '—'}</div>
+            <div class="oo-name">${order.name || 'Unknown'} · ${order.phone || ''}</div>
+          </div>
+          <div class="oo-amount">₹${displayTotal}</div>
+        </div>`;
+        html += `<div class="oo-items">${(order.items || '').replace(/\n/g, '<br>')}</div>`;
+        html += `<div class="oo-footer">
+          <span class="oo-time">${time}</span>
+          ${imported ? '<span class="oo-imported-badge">Imported</span>' : '<span class="oo-import-badge">Tap to Import</span>'}
+        </div>`;
+        html += `</div>`;
       });
-      body.innerHTML = h || 'No orders';
+
+      body.innerHTML = html;
     }
 
-    async function importOnlineOrder(id) {
-      if (importedOnlineIds.includes(id)) return;
-      const order = onlineOrders.find(o => o.order_id === id); if (!order) return;
-      cardCounter++; const card = { id: 'draft-'+cardCounter, token: await generateToken(), cart: parseOnlineItems(order.items), customerName: order.name, note: 'Online Order '+id, phone: order.phone, status: 'draft', createdAt: new Date().toISOString(), paymentStatus: 'paid' };
-      allCards.unshift(card); importedOnlineIds.push(id); saveToLocalStorage(); showToast('Imported!', '📱'); closeOnlineModal(); renderGrid(); openEditPanel(card.id);
+    async function importOnlineOrder(orderId) {
+      const order = onlineOrders.find(o => o.order_id === orderId);
+      if (!order) return;
+
+      // Parse the text items into cart entries
+      const cartItems = parseOnlineItems(order.items || '');
+
+      cardCounter++;
+      const card = {
+        id: 'draft-' + cardCounter,
+        token: await generateToken(),
+        cart: cartItems,
+        customerName: order.name || '',
+        note: `Online Order ${order.order_id} | Phone: ${order.phone || '—'} | Paid: ₹${order.amount || 0}`,
+        status: 'draft',
+        total: 0,
+        createdAt: new Date().toISOString(),
+        onlineOrderId: order.order_id
+      };
+      card.total = calcCardTotal(card);
+
+      allCards.unshift(card);
+      importedOnlineIds.push(order.order_id);
+      saveImportedIds();
+      saveToLocalStorage();
+
+      showToast(`Imported ${order.order_id} — ${order.name}`, '📱');
+      closeOnlineModal();
+      renderGrid();
+      openEditPanel(card.id);
     }
 
+    // Parse the plain-text items note into structured cart items
     function parseOnlineItems(text) {
-      const cart = []; (text||'').split('\n').forEach(line => {
-        const m = line.match(/^(.+?)\s*[×x]\s*(\d+)\s*=\s*₹(\d+)/);
-        if (m) cart.push({ menuItem: findMenuItem(m[1].trim()) || { id: m[1].trim(), name: m[1].trim(), price: Math.round(m[3]/m[2]) }, qty: parseInt(m[2]), flavour: null, addons: [], paid: true });
+      const cart = [];
+      const lines = text.split('\n');
+      let currentItem = null;
+
+      lines.forEach(line => {
+        line = line.trim();
+        if (!line || line.startsWith('---') || line.startsWith('Total:') || line.startsWith('Add-On:') || line.startsWith('Note:')) return;
+
+        // Sub-item (flavour or addon)
+        if (line.startsWith('└─')) {
+          if (!currentItem) return;
+          const subText = line.substring(2).trim();
+          
+          if (subText.includes('(+₹')) {
+            // Add-on: "Chipotle (+₹15)"
+            const addonMatch = subText.match(/(.+?)\s*\(\+₹(\d+)\)/);
+            if (addonMatch) {
+              currentItem.addons.push({
+                name: addonMatch[1].trim(),
+                price: parseInt(addonMatch[2]) || 0
+              });
+            }
+          } else {
+            // Flavour or simple sub-item
+            currentItem.flavour = subText;
+          }
+          return;
+        }
+
+        // Main item: "Item Name × Qty = ₹Price" or "Item Name x Qty = ₹Price"
+        const match = line.match(/^(.+?)\s*[×x]\s*(\d+)\s*=\s*₹(\d+)/);
+        if (match) {
+          const name = match[1].trim();
+          const qty = parseInt(match[2]) || 1;
+          const total = parseInt(match[3]) || 0;
+          const unitPrice = qty > 0 ? Math.round(total / qty) : total;
+
+          // Try to find a matching POS menu item
+          const menuItem = findMenuItem(name.toLowerCase().replace(/[^a-z0-9]/g, ''));
+
+          currentItem = {
+            menuItem: menuItem || { id: name, name: name, price: unitPrice },
+            qty: qty,
+            flavour: null,
+            addons: []
+          };
+          cart.push(currentItem);
+        }
       });
+
       return cart;
     }
 
-    function logoutPos() { localStorage.removeItem('pos_logged_in'); location.reload(); }
+    // ═══════════════════════════════════════════
+    //  INIT
+    // ═══════════════════════════════════════════
 
-    function showWaPopup(card, order) {
-      const name = card.customerName || order.customer_name || 'Customer';
-      let phone = ''; const note = card.note || order.note || '';
-      const match = note.match(/Phone:\s*(?:\+?91)?\s*(\d{1,10})/); if (match) phone = match[1];
-      if (phone && phone !== '0') {
-        const msg = `Hi ${name}! Your SNACITO order (${card.token}) is *ready*! Please collect.`;
-        showWaToast(`${card.token} is READY!`, `Customer: +91 ${phone}`, `https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`);
-      } else showWaToast(`${card.token} is READY!`, `No phone number.`, '');
-    }
+    loadFromLocalStorage();
+    loadSentOrders();
+    fetchOnlineOrders();
+    renderGrid();
+    startClock('clock');
 
-    let readyNotifiedIds = new Set();
-    loadFromLocalStorage(); loadSentOrders(); fetchOnlineOrders(); renderGrid(); startClock('clock');
+    // Poll to update sent order statuses + online orders
+    let readyNotifiedIds = new Set(); // track which orders we've already shown WA popup for
+
     setInterval(async () => {
       try {
         const data = await supabaseSelect('pos_orders', 'select=*');
-        data.forEach(o => {
-          const c = allCards.find(card => card.token === o.token && card.status === 'sent');
-          if (c) { if (c.dbStatus !== o.status) { c.dbStatus = o.status; if ((o.status==='ready'||o.status==='completed') && !readyNotifiedIds.has(o.id)) { readyNotifiedIds.add(o.id); showWaPopup(c, o); } } }
+        data.forEach(order => {
+          const card = allCards.find(c => c.token === order.token && c.status === 'sent');
+          if (card) {
+            const prevStatus = card.dbStatus;
+            if (prevStatus !== order.status) {
+              card.dbStatus = order.status;
+
+              // If status just changed to 'ready' or 'completed', show WhatsApp popup
+              if ((order.status === 'ready' || order.status === 'completed') && !readyNotifiedIds.has(order.id)) {
+                readyNotifiedIds.add(order.id);
+                showWaPopup(card, order);
+              }
+            }
+          }
         });
-        renderGrid(); fetchOnlineOrders();
-      } catch (e) { }
+        renderGrid();
+      } catch (e) { /* retry */ }
+
+      // Also refresh online order count
+      fetchOnlineOrders();
     }, 5000);
+
+    // ═══════════════════════════════════════════
+    //  WHATSAPP POPUP (for order ready notification)
+    // ═══════════════════════════════════════════
+
+    function showWaPopup(card, order) {
+      const name = card.customerName || order.customer_name || 'Customer';
+      let phone = '';
+
+      // Extract phone from note (online orders: 'Phone: XXXXXXXXXX' or 'Phone: 0')
+      const note = card.note || order.note || '';
+      const phoneMatch = note.match(/Phone:\s*(?:\+?91)?\s*(\d{1,10})/);
+      if (phoneMatch) phone = phoneMatch[1];
+      
+      const title = `${card.token} — ${name} is READY!`;
+
+      if (phone && phone !== '0') {
+        const sub = `Customer phone: +91 ${phone}.`;
+        const lines = [
+          'Hi ' + name + '! Your *SNACITO* order (' + card.token + ') is *ready*!',
+          '',
+          'Please collect from the *SNACITO Stall* at Main Sports Ground, JKLU.',
+          '',
+          'Thank you!'
+        ];
+        const msg = lines.join('\n');
+        const waLink = 'https://wa.me/91' + phone + '?text=' + encodeURIComponent(msg);
+        showWaToast(title, sub, waLink);
+      } else {
+        const isOptOut = phone === '0';
+        const sub = isOptOut ? `Customer opted out of WhatsApp messages.` : `No phone number found. You will have to select the contact manually.`;
+        const lines = [
+          'Hi ' + name + '! Your *SNACITO* order (' + card.token + ') is *ready*!',
+          '',
+          'Please collect from the *SNACITO Stall* at Main Sports Ground, JKLU.',
+          '',
+          'Thank you!'
+        ];
+        const msg = lines.join('\n');
+        const waLink = isOptOut ? '' : 'https://wa.me/?text=' + encodeURIComponent(msg);
+        showWaToast(title, sub, waLink);
+      }
+    }
   </script>
+
 </body>
 </html>
