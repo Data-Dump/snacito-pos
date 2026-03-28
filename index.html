@@ -1356,10 +1356,12 @@
           customer_name: card.customerName,
           note: card.note + (card.phone ? ' | Phone: ' + card.phone : ''),
           total: card.total,
-          payment_status: card.paymentStatus || 'paid'
+          payment_status: card.paymentStatus || 'paid',
+          status: 'new' // Send back to kitchen
         });
 
-        showToast(`Order ${card.token} updated!`, '💾');
+        card.dbStatus = 'new'; // Update local state
+        showToast(`Order ${card.token} updated and sent to kitchen!`, '💾');
         renderGrid();
         validateDraftEnable(); // Update button state
       } catch (err) {

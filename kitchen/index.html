@@ -136,6 +136,19 @@
     }
 
     .order-timer.overdue { color: var(--danger); }
+
+    .updated-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      background: var(--brand-gold);
+      color: #000;
+      font-size: 0.6rem;
+      font-weight: 800;
+      border-radius: 4px;
+      margin-left: 8px;
+      text-transform: uppercase;
+      animation: pulse 1s infinite;
+    }
   </style>
 </head>
 <body>
@@ -184,23 +197,19 @@
     </div>
   </div>
 
-  <!-- WhatsApp Toasts are rendered dynamically by pos-app.js -->
-
   <script src="../pos-app.js?v=2"></script>
   <script>
     const orders = new Map();
     let currentFilter = 'active';
     let knownIds = new Set();
-    let newOrderIds = new Set(); // track brand-new orders for animation
-    let lastDataHash = ''; // track changes to avoid unnecessary re-renders
+    let lastDataHash = '';
 
-    // Build a simple hash of orders to detect changes
     function buildDataHash() {
-      const entries = [...orders.values()].map(o => `${o.id}:${o.status}`).sort().join('|');
+      const entries = [...orders.values()].map(o => `${o.id}:${o.status}:${JSON.stringify(o.items)}`).sort().join('|');
       return entries;
     }
 
-    function renderKitchen(forceNewIds) {
+    function renderKitchen(forceNewIds, forceUpdatedIds) {
       const grid = document.getElementById('kitchen-grid');
       const filtered = [...orders.values()].filter(o => {
         if (currentFilter === 'active') return o.status === 'new' || o.status === 'preparing';
@@ -225,11 +234,12 @@
       filtered.forEach(order => {
         const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
         const isNew = forceNewIds && forceNewIds.has(order.id);
+        const isUpdated = forceUpdatedIds && forceUpdatedIds.has(order.id);
 
-        html += `<div class="kitchen-order-card status-${order.status}${isNew ? ' new-order-flash' : ''}" id="order-card-${order.id}" style="${isNew ? '' : 'animation:none;'}">`;
+        html += `<div class="kitchen-order-card status-${order.status}${isNew ? ' new-order-flash' : ''}" id="order-card-${order.id}">`;
         html += `<div class="kitchen-order-header">
           <div>
-            <div class="kitchen-order-token">${order.token}</div>
+            <div class="kitchen-order-token">${order.token}${isUpdated ? '<span class="updated-badge">UPDATED</span>' : ''}</div>
             <div class="kitchen-order-customer">${order.customer_name || 'Walk-in'}</div>
           </div>
           <div style="text-align:right;">
@@ -296,12 +306,9 @@
         await supabaseUpdate('pos_orders', id, { status: newStatus });
         const order = orders.get(id);
         if (order) {
-          const prevStatus = order.status;
           order.status = newStatus;
           lastDataHash = buildDataHash();
           renderKitchen();
-
-          // (WhatsApp notification is now handled exclusively by the main POS screen)
         }
         showToast(`Order ${orders.get(id)?.token || ''} → ${newStatus}`, '🔄');
       } catch (err) {
@@ -309,8 +316,6 @@
         showToast('Failed to update status', '❌');
       }
     }
-
-
 
     document.querySelectorAll('.kitchen-filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -334,24 +339,30 @@
       try {
         const data = await supabaseSelect('pos_orders', 'select=*');
         let brandNewIds = new Set();
+        let changedIds = new Set();
         let hasChanges = false;
 
         data.forEach(order => {
           const existing = orders.get(order.id);
           if (!existing) {
-            // Brand new order
             orders.set(order.id, order);
             if (knownIds.size > 0) brandNewIds.add(order.id);
             knownIds.add(order.id);
             hasChanges = true;
-          } else if (existing.status !== order.status) {
-            // Status changed externally (e.g. from dashboard)
-            orders.set(order.id, order);
-            hasChanges = true;
+          } else {
+            const oldItemsStr = typeof existing.items === 'string' ? existing.items : JSON.stringify(existing.items);
+            const newItemsStr = typeof order.items === 'string' ? order.items : JSON.stringify(order.items);
+            const itemsChanged = oldItemsStr !== newItemsStr;
+            const statusChanged = existing.status !== order.status;
+            const otherChanged = existing.note !== order.note || existing.customer_name !== order.customer_name;
+            if (itemsChanged || statusChanged || otherChanged) {
+              orders.set(order.id, order);
+              if (itemsChanged || otherChanged) changedIds.add(order.id);
+              hasChanges = true;
+            }
           }
         });
 
-        // Also detect deleted orders
         if (data.length !== orders.size) {
           const remoteIds = new Set(data.map(o => o.id));
           for (const id of orders.keys()) {
@@ -359,19 +370,17 @@
           }
         }
 
-        // Only re-render if something actually changed
         if (hasChanges) {
           lastDataHash = buildDataHash();
-          if (brandNewIds.size > 0) {
+          if (brandNewIds.size > 0 || changedIds.size > 0) {
             playNotificationSound();
-            renderKitchen(brandNewIds);
+            renderKitchen(brandNewIds, changedIds);
           } else {
             renderKitchen();
           }
         }
-        // Just update stats (lightweight, no DOM rebuild)
         updateStats();
-      } catch (err) { /* retry next cycle */ }
+      } catch (err) { /* retry */ }
     }
 
     loadOrders().then(() => { setInterval(pollOrders, 2500); });
@@ -386,6 +395,5 @@
       }
     }, { once: true });
   </script>
-
 </body>
 </html>
