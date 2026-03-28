@@ -372,6 +372,7 @@
         } else {
           html += `<span style="font-size:0.7rem; color:var(--text-muted);">—</span>`;
         }
+        html += `<a href="../bill/?id=${order.id}" target="_blank" class="status-action-btn" style="background:var(--success); border-color:var(--success); margin-left:8px; text-decoration:none; display:inline-block; line-height:1.2;">Bill 💳</a>`;
         html += `<button class="status-action-btn" style="background:var(--danger); border-color:var(--danger); margin-left:8px;" onclick="confirmDeleteOrder(${order.id}, '${order.token}')">Delete</button>`;
         html += `</div></td></tr>`;
       });

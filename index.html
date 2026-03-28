@@ -665,6 +665,7 @@
         </div>
         <a class="btn-primary" id="btn-send-wa" href="#" target="_blank" style="display:none; background:#25D366; text-align:center; text-decoration:none; color:#fff; font-size:0.82rem; padding:10px 16px; border-radius:10px;">📱 Send WhatsApp Confirmation</a>
         <div style="border-top:1px solid var(--border-color); margin:6px 0;"></div>
+        <a class="btn-primary" id="btn-print-bill" href="#" target="_blank" style="display:none; background:var(--success); text-align:center; text-decoration:none; color:#fff; font-size:0.82rem; padding:10px 16px; border-radius:10px; margin-bottom: 8px;">Print Bill 💳</a>
         <button class="btn-primary" id="btn-send-order" disabled>🔔 Send to Kitchen</button>
         <button class="btn-primary" id="btn-update-order" style="display:none; background:var(--brand-gold);">💾 Update Order</button>
         <button class="btn-primary" id="btn-delete-order" style="margin-top:12px; background:var(--danger); border-color:var(--danger);" onclick="deleteOrder()">🗑️ Delete Order</button>
@@ -860,7 +861,10 @@
         // Footer
         html += `<div class="order-card-footer">
           <span class="order-card-total">₹${total}</span>
-          <span class="order-card-time">${timeStr}</span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            ${isSent && card.dbId ? `<a href="./bill/?id=${card.dbId}" target="_blank" onclick="event.stopPropagation()" style="text-decoration:none; font-size:0.75rem; font-weight:700; background:var(--success); color:white; padding:4px 10px; border-radius:6px;">Bill 💳</a>` : ''}
+            <span class="order-card-time">${timeStr}</span>
+          </div>
         </div>`;
 
         html += `</div>`;
@@ -935,6 +939,14 @@
 
       // Store original cart for comparison (to avoid unnecessary kitchen resets)
       editingOriginalCartString = JSON.stringify(card.cart);
+
+      const billBtn = document.getElementById('btn-print-bill');
+      if (isSent && card.dbId) {
+        billBtn.href = `./bill/?id=${card.dbId}`;
+        billBtn.style.display = 'block';
+      } else {
+        billBtn.style.display = 'none';
+      }
 
       updateWaButton();
       renderEditBody();

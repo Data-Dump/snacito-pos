@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SNACITO — Invoice</title>
+  <link rel="stylesheet" href="../pos-style.css">
+  <style>
+    :root {
+      --invoice-width: 210mm; /* A4 Width */
+      --invoice-height: 297mm; /* A4 Height */
+      --invoice-primary: #1a1a1a;
+      --invoice-muted: #666;
+      --invoice-border: #eee;
+    }
+
+    body {
+      background: #f0f0f0;
+      color: var(--invoice-primary);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 40px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .bill-canvas {
+      background: white;
+      width: var(--invoice-width);
+      min-height: var(--invoice-height);
+      padding: 60px 50px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    .bill-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 60px;
+    }
+
+    .bill-brand-logo {
+      width: 180px;
+      height: auto;
+      margin-bottom: 12px;
+    }
+
+    .bill-meta-group {
+      text-align: right;
+    }
+
+    .invoice-title {
+      font-size: 2.2rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin: 0 0 10px 0;
+    }
+
+    .invoice-token-badge {
+      display: inline-block;
+      background: #000;
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-weight: 800;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+    }
+
+    .bill-address-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 40px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    .bill-address-col {
+      width: 45%;
+    }
+
+    .address-label {
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      color: #888;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+    }
+
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 40px;
+    }
+
+    .items-table th {
+      text-align: left;
+      border-bottom: 2px solid #333;
+      padding: 12px 8px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #000;
+    }
+
+    .items-table td {
+      padding: 18px 8px;
+      border-bottom: 1px solid var(--invoice-border);
+      vertical-align: top;
+    }
+
+    .item-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #000;
+    }
+
+    .item-specs {
+      font-size: 0.78rem;
+      color: #777;
+      margin-top: 4px;
+    }
+
+    .item-price, .item-qty, .item-total {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .summary-section {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .summary-table {
+      width: 250px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 0.9rem;
+    }
+
+    .summary-row.grand-total {
+      margin-top: 10px;
+      border-top: 2px solid #000;
+      padding-top: 15px;
+      font-weight: 900;
+      font-size: 1.4rem;
+    }
+
+    .bill-notes {
+      margin-top: 80px;
+      font-size: 0.82rem;
+      color: #555;
+      max-width: 400px;
+      line-height: 1.5;
+    }
+
+    .bill-footer {
+      position: absolute;
+      bottom: 60px;
+      left: 50px;
+      right: 50px;
+      text-align: center;
+      border-top: 1px solid var(--invoice-border);
+      padding-top: 30px;
+      font-size: 0.75rem;
+      color: #999;
+    }
+
+    .print-actions {
+      position: fixed;
+      bottom: 30px;
+      display: flex;
+      gap: 15px;
+      z-index: 1000;
+    }
+
+    .btn {
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+      transition: 0.2s;
+    }
+
+    .btn-print { background: #000; color: #fff; }
+    .btn-back { background: #fff; color: #333; border: 1.5px solid #ddd; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(0,0,0,0.2); }
+
+    @media print {
+      body { background: white; padding: 0; }
+      .bill-canvas { box-shadow: none; margin: 0; width: 100%; height: auto; }
+      .print-actions { display: none; }
+    }
+
+    .loading-state {
+      text-align: center;
+      padding: 100px;
+      color: #aaa;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bill-canvas" id="bill-content">
+    <div class="loading-state">PREPARING INVOICE...</div>
+  </div>
+
+  <div class="print-actions">
+    <button class="btn btn-back" onclick="window.history.back()">← Return to POS</button>
+    <button class="btn btn-print" onclick="window.print()">Print A4 Invoice 🖨️</button>
+  </div>
+
+  <script src="../pos-app.js"></script>
+  <script>
+    async function loadBill() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const orderId = urlParams.get('id');
+
+      if (!orderId) {
+        document.getElementById('bill-content').innerHTML = '<div class="loading-state">ERROR: MISSING ORDER ID</div>';
+        return;
+      }
+
+      try {
+        const results = await supabaseSelect('pos_orders', `id=eq.${orderId}`);
+        if (!results || results.length === 0) {
+          document.getElementById('bill-content').innerHTML = '<div class="loading-state">ERROR: ORDER NOT FOUND</div>';
+          return;
+        }
+
+        const order = results[0];
+        renderBill(order);
+      } catch (err) {
+        console.error('Invoice fetch failed:', err);
+        document.getElementById('bill-content').innerHTML = '<div class="loading-state">CONNECTION ERROR</div>';
+      }
+    }
+
+    function renderBill(order) {
+      const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+      const date = new Date(order.created_at);
+      const invoiceDate = date.toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
+      const invoiceTime = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+      const container = document.getElementById('bill-content');
+      
+      let itemsHtml = '';
+      items.forEach(item => {
+        let specs = [];
+        if (item.flavour) specs.push(`• Flavour: ${item.flavour}`);
+        if (item.addons && item.addons.length > 0) {
+          specs.push(`• Extra: ${item.addons.map(a => `${a.name} (+₹${a.price})`).join(', ')}`);
+        }
+
+        itemsHtml += `
+          <tr>
+            <td>
+              <div class="item-name">${item.name}</div>
+              ${specs.length > 0 ? `<div class="item-specs">${specs.join('<br>')}</div>` : ''}
+            </td>
+            <td class="item-qty">x${item.qty}</td>
+            <td class="item-price">₹${item.price}</td>
+            <td class="item-total" style="text-align:right; font-weight:700;">₹${item.price * item.qty}</td>
+          </tr>
+        `;
+      });
+
+      container.innerHTML = `
+        <div class="bill-header">
+          <div>
+            <img src="../Snacito-Logo.png" class="bill-brand-logo" alt="SNACITO">
+            <div style="font-size: 0.8rem; color: #777; margin-top: 5px;">
+              <b>SNACITO STALL</b><br>
+              Volleyball Ground, JKLU Campus<br>
+              +91 9644679988
+            </div>
+          </div>
+          <div class="bill-meta-group">
+            <h1 class="invoice-title">Invoice</h1>
+            <div class="invoice-token-badge">TOKEN: ${order.token}</div>
+            <div style="margin-top:15px; font-size: 0.85rem; color: #555;">
+              <b>Date:</b> ${invoiceDate}<br>
+              <b>Time:</b> ${invoiceTime}<br>
+              <b>ID:</b> #${order.id}
+            </div>
+          </div>
+        </div>
+
+        <div class="bill-address-row">
+          <div class="bill-address-col">
+            <div class="address-label">Bill To</div>
+            <div style="font-size:1.1rem; font-weight:700;">${order.customer_name || 'Walk-in Customer'}</div>
+            <div style="color:#666;">Counter Sale</div>
+          </div>
+          <div class="bill-address-col" style="text-align:right;">
+            <div class="address-label">Payment Status</div>
+            <div style="font-size:1.1rem; font-weight:700; color:${order.payment_status === 'unpaid' ? '#e74c3c' : '#27ae60'};">
+              ${(order.payment_status || 'PAID').toUpperCase()}
+            </div>
+          </div>
+        </div>
+
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Qty</th>
+              <th>Unit Price</th>
+              <th style="text-align:right;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 60px;">
+          <div class="qr-payment-section">
+            <div class="address-label">Scan to Pay via UPI</div>
+            <div style="display: flex; align-items: center; gap: 20px; border: 1.5px solid #eee; padding: 15px; border-radius: 12px; background: #fafafa;">
+              <img id="upi-qr" src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=upi%3A%2F%2Fpay%3Fpa%3Dsnacito%40axl%26pn%3DSNACITO%26am%3D${order.total}%26cu%3DINR%26tn%3DOrder_${order.token}" style="width: 120px; height: 120px; border-radius: 4px;" alt="UPI QR">
+              <div style="font-size: 0.8rem; color: #666; line-height: 1.6;">
+                <b style="color: #000;">SNACITO STALL</b><br>
+                VPA: snacito@axl<br>
+                Amount: ₹${order.total}<br>
+                <span style="font-size: 0.7rem; color: #999;">Scan using GPay, PhonePe, or Paytm</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="summary-table">
+            <div class="summary-row">
+              <span style="color:#888;">Subtotal</span>
+              <span>₹${order.total}</span>
+            </div>
+            <div class="summary-row">
+              <span style="color:#888;">Processing Fee</span>
+              <span>₹0</span>
+            </div>
+            <div class="summary-row grand-total">
+              <span>Grand Total</span>
+              <span>₹${order.total}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bill-footer">
+          <div style="font-weight:700; color:#444; margin-bottom: 5px;">Thank you for your business!</div>
+          <div>Visit us again for the ultimate snack experience.</div>
+          <div style="margin-top: 20px; font-size: 0.65rem;">
+            This is a computer-generated invoice and does not require a physical signature.
+          </div>
+        </div>
+      `;
+    }
+
+    window.onload = loadBill;
+  </script>
+</body>
+</html>
