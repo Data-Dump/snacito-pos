@@ -899,6 +899,12 @@
       document.getElementById('custom-name').value = '';
       document.getElementById('custom-price').value = '';
 
+      const delBtn = document.getElementById('btn-delete-order');
+      if (delBtn) {
+        delBtn.disabled = false;
+        delBtn.textContent = '🗑️ Delete Order';
+      }
+
       const overlay = document.getElementById('edit-overlay');
       const panel = document.getElementById('edit-panel');
       const isSent = card.status === 'sent';
@@ -1394,6 +1400,9 @@
         if (card.status === 'draft') {
           saveToLocalStorage();
         }
+
+        btn.disabled = false;
+        btn.textContent = originalText;
 
         closeEditPanel();
       } catch (err) {
