@@ -231,6 +231,10 @@
         <div class="stat-value" id="stat-unpaid" style="color:var(--danger)">0</div>
         <div class="stat-label">Not Paid</div>
       </div>
+      <div class="stat-card" style="border-color:#9b59b6;">
+        <div class="stat-value" id="stat-discounts" style="color:#9b59b6">₹0</div>
+        <div class="stat-label">Total Discounts</div>
+      </div>
     </div>
 
     <div class="total-banner">
@@ -359,7 +363,10 @@
         }
         html += `</td>`;
 
-        html += `<td style="font-weight:700;color:var(--brand-gold);">₹${order.total}</td>`;
+        html += `<td style="font-weight:700;color:var(--brand-gold);">
+          ₹${order.total}
+          ${order.discount ? `<br><span style="font-size:0.65rem; color:#e74c3c; font-weight:600;">(Disc: ₹${order.discount})</span>` : ''}
+        </td>`;
         html += `<td><span class="status-badge ${order.status}">${order.status}</span></td>`;
         html += `<td style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap;">${created.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}<br>${timeAgo(order.created_at)}</td>`;
 
@@ -389,6 +396,9 @@
 
       const revenue = allOrders.reduce((s, o) => s + (o.total || 0), 0);
       document.getElementById('total-revenue').textContent = `₹${revenue.toLocaleString('en-IN')}`;
+
+      const totalDiscounts = allOrders.reduce((s, o) => s + (o.discount || 0), 0);
+      document.getElementById('stat-discounts').textContent = `₹${totalDiscounts.toLocaleString('en-IN')}`;
     }
 
     function renderItemSales() {
