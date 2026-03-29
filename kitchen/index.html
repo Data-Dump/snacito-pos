@@ -139,23 +139,70 @@
 
     .updated-badge {
       display: inline-block;
-      padding: 2px 6px;
+      padding: 2px 10px;
       background: var(--brand-gold);
       color: #000;
-      font-size: 0.6rem;
-      font-weight: 800;
+      font-size: 0.65rem;
+      font-weight: 900;
       border-radius: 4px;
       margin-left: 8px;
       text-transform: uppercase;
       animation: pulse 1s infinite;
+      cursor: pointer;
+      position: relative;
+      transition: var(--transition);
+      box-shadow: 0 0 10px rgba(212, 160, 23, 0.4);
+    }
+
+    .updated-badge:hover {
+      background: #fff;
+      transform: scale(1.05);
+    }
+
+    .updated-badge::after {
+      content: ' ×';
+      font-size: 0.8rem;
+      font-weight: 700;
+      opacity: 0.7;
+    }
+
+    .kitchen-order-card.order-updated {
+      border-color: var(--brand-gold) !important;
+      box-shadow: 0 0 40px rgba(212, 160, 23, 0.25) !important;
+      animation: updated-card-glow 2s infinite ease-in-out;
+    }
+
+    @keyframes updated-card-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(212, 160, 23, 0.15); border-color: var(--brand-gold); }
+      50% { box-shadow: 0 0 50px rgba(212, 160, 23, 0.4); border-color: #fff; }
     }
 
     .kitchen-order-item.item-updated-highlight {
-      background: rgba(212, 160, 23, 0.15); /* Subtle gold background */
-      border-left: 3px solid var(--brand-gold);
-      padding-left: 8px;
-      margin-left: -11px; /* Align back with border-left offset */
-      animation: flash-item-gold 2s ease forwards;
+      background: rgba(212, 160, 23, 0.2);
+      border-left: 4px solid var(--brand-gold);
+      padding-left: 10px;
+      margin-left: -11px;
+      animation: item-glow-pulse 2s infinite ease-in-out;
+      border-radius: 4px;
+    }
+
+    .item-update-badge {
+      display: inline-block;
+      font-size: 0.55rem;
+      font-weight: 900;
+      background: var(--brand-gold);
+      color: #000;
+      padding: 1px 4px;
+      border-radius: 3px;
+      margin-left: 6px;
+      vertical-align: middle;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    @keyframes item-glow-pulse {
+      0%, 100% { background: rgba(212, 160, 23, 0.1); }
+      50% { background: rgba(212, 160, 23, 0.3); }
     }
 
     @keyframes flash-item-gold {
@@ -252,12 +299,12 @@
       filtered.forEach(order => {
         const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
         const isNew = forceNewIds && forceNewIds.has(order.id);
-        const isUpdated = forceUpdatedIds && forceUpdatedIds.has(order.id);
+        const hasPersistentUpdate = order.has_update === true;
 
-        html += `<div class="kitchen-order-card status-${order.status}${isNew ? ' new-order-flash' : ''}" id="order-card-${order.id}">`;
+        html += `<div class="kitchen-order-card status-${order.status}${isNew ? ' new-order-flash' : ''}${hasPersistentUpdate ? ' order-updated' : ''}" id="order-card-${order.id}">`;
         html += `<div class="kitchen-order-header">
           <div>
-            <div class="kitchen-order-token">${order.token}${isUpdated ? '<span class="updated-badge">UPDATED</span>' : ''}</div>
+            <div class="kitchen-order-token">${order.token}${hasPersistentUpdate ? `<span class="updated-badge" onclick="ackUpdate(${order.id}, event)" title="Click to acknowledge">UPDATED</span>` : ''}</div>
             <div class="kitchen-order-customer">${order.customer_name || 'Walk-in'}</div>
           </div>
           <div style="text-align:right;">
@@ -278,7 +325,7 @@
             
             html += `<div class="kitchen-order-item${isItemEdited ? ' item-updated-highlight' : ''}">
               <div>
-                <div class="kitchen-item-name">${item.name}</div>`;
+                <div class="kitchen-item-name">${item.name}${isItemEdited ? '<span class="item-update-badge">NEW</span>' : ''}</div>`;
             if (item.flavour) html += `<div class="kitchen-item-addons">Flavour: ${item.flavour}</div>`;
             if (item.addons && item.addons.length > 0) {
               html += `<div class="kitchen-item-addons">Add-ons: ${item.addons.map(a => a.name).join(', ')}</div>`;
@@ -328,6 +375,10 @@
         const order = orders.get(id);
         if (order) {
           order.status = newStatus;
+          // Clear update highlights when starting preparation or completing
+          order.has_update = false;
+          order.editedItemKeys = [];
+          
           lastDataHash = buildDataHash();
           renderKitchen();
         }
@@ -335,6 +386,16 @@
       } catch (err) {
         console.error('Status update failed:', err);
         showToast('Failed to update status', '❌');
+      }
+    }
+
+    function ackUpdate(id, event) {
+      if (event) event.stopPropagation();
+      const order = orders.get(id);
+      if (order) {
+        order.has_update = false;
+        order.editedItemKeys = [];
+        renderKitchen();
       }
     }
 
@@ -385,9 +446,15 @@
                 order.editedItemKeys = newItems
                   .map(getItemKey)
                   .filter(key => !oldKeys.has(key));
+                
+                // If items were actually added or quantities changed, mark as update
+                if (order.editedItemKeys.length > 0) {
+                  order.has_update = true;
+                }
               } else if (existing.editedItemKeys) {
-                // Persist edited flag if only other things changed (optional, but keep for consistency)
+                // Persist existing highlight states
                 order.editedItemKeys = existing.editedItemKeys;
+                order.has_update = existing.has_update;
               }
 
               orders.set(order.id, order);

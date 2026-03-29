@@ -283,21 +283,31 @@
       
       let itemsHtml = '';
       items.forEach(item => {
-        let specs = [];
-        if (item.flavour) specs.push(`• Flavour: ${item.flavour}`);
-        if (item.addons && item.addons.length > 0) {
-          specs.push(`• Extra: ${item.addons.map(a => `${a.name} (+₹${a.price})`).join(', ')}`);
+        const addonSum = (item.addons || []).reduce((s, a) => s + (a.price || 0), 0);
+        const unitPriceWithAddons = (item.price || 0) + addonSum;
+        const lineTotal = unitPriceWithAddons * (item.qty || 1);
+
+        let specsHtml = '';
+        if (item.flavour || (item.addons && item.addons.length > 0)) {
+          specsHtml += `<div style="margin-top:4px; font-size:0.75rem; border-top:1px dashed #eee; padding-top:4px;">`;
+          specsHtml += `<div style="color:#888;">₹${item.price} (Base${item.flavour ? ` • ${item.flavour}` : ''})</div>`;
+          if (item.addons && item.addons.length > 0) {
+            item.addons.forEach(a => {
+              specsHtml += `<div style="color:#27ae60; font-weight:600;">+ ₹${a.price} ${a.name}</div>`;
+            });
+          }
+          specsHtml += `</div>`;
         }
 
         itemsHtml += `
           <tr>
             <td>
               <div class="item-name">${item.name}</div>
-              ${specs.length > 0 ? `<div class="item-specs">${specs.join('<br>')}</div>` : ''}
+              ${specsHtml}
             </td>
             <td class="item-qty">x${item.qty}</td>
-            <td class="item-price">₹${item.price}</td>
-            <td class="item-total" style="text-align:right; font-weight:700;">₹${item.price * item.qty}</td>
+            <td class="item-price">₹${unitPriceWithAddons}</td>
+            <td class="item-total" style="text-align:right; font-weight:700;">₹${lineTotal}</td>
           </tr>
         `;
       });
